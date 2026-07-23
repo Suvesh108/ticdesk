@@ -13,6 +13,12 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+var funcMap = template.FuncMap{
+	"sub": func(a, b int) int { return a - b },
+	"add": func(a, b int) int { return a + b },
+	"mul": func(a, b int) int { return a * b },
+}
+
 type TicketHandler struct {
 	repo         *repository.TicketRepository
 	emailService *services.EmailService
@@ -23,8 +29,12 @@ func NewTicketHandler(repo *repository.TicketRepository, emailService *services.
 }
 
 type TicketListData struct {
-	User    *models.User
-	Tickets []models.Ticket
+	User       *models.User
+	Tickets    []models.Ticket
+	Categories []models.Category
+	TotalCount int
+	Page       int
+	Limit      int
 }
 
 type TicketNewData struct {
@@ -40,22 +50,69 @@ type TicketDetailData struct {
 
 func (h *TicketHandler) ShowTicketList(w http.ResponseWriter, r *http.Request) {
 	user := auth.GetUserFromContext(r.Context())
-	tickets, err := h.repo.ListTickets(r.Context(), user)
+	_ = r.ParseForm()
+
+	search := r.FormValue("search")
+	categoryIDStr := r.FormValue("category_id")
+	status := r.FormValue("status")
+	priority := r.FormValue("priority")
+	pageStr := r.FormValue("page")
+
+	categoryID, _ := strconv.Atoi(categoryIDStr)
+	page, _ := strconv.Atoi(pageStr)
+	if page < 1 {
+		page = 1
+	}
+	limit := 10
+
+	opts := repository.TicketFilterOptions{
+		Search:     search,
+		CategoryID: categoryID,
+		Status:     status,
+		Priority:   priority,
+		Page:       page,
+		Limit:      limit,
+	}
+
+	tickets, totalCount, err := h.repo.ListTicketsFiltered(r.Context(), user, opts)
 	if err != nil {
 		http.Error(w, "Failed to load tickets: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	tmpl, err := template.ParseFiles(
+	categories, _ := h.repo.GetCategories(r.Context())
+
+	data := TicketListData{
+		User:       user,
+		Tickets:    tickets,
+		Categories: categories,
+		TotalCount: totalCount,
+		Page:       page,
+		Limit:      limit,
+	}
+
+	// Check if this is an HTMX partial request
+	if r.Header.Get("HX-Request") == "true" {
+		tmpl, err := template.New("ticket_table.html").Funcs(funcMap).ParseFiles("web/templates/partials/ticket_table.html")
+		if err != nil {
+			http.Error(w, "Partial error: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		_ = tmpl.Execute(w, data)
+		return
+	}
+
+	tmpl, err := template.New("base.html").Funcs(funcMap).ParseFiles(
 		"web/templates/layouts/base.html",
 		"web/templates/pages/ticket_list.html",
+		"web/templates/partials/ticket_table.html",
 	)
 	if err != nil {
 		http.Error(w, "Template Error: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	data := TicketListData{User: user, Tickets: tickets}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	_ = tmpl.ExecuteTemplate(w, "base.html", data)
 }
@@ -68,7 +125,7 @@ func (h *TicketHandler) ShowNewTicket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tmpl, err := template.ParseFiles(
+	tmpl, err := template.New("base.html").Funcs(funcMap).ParseFiles(
 		"web/templates/layouts/base.html",
 		"web/templates/pages/ticket_new.html",
 	)
@@ -137,7 +194,7 @@ func (h *TicketHandler) ShowTicketDetail(w http.ResponseWriter, r *http.Request)
 
 	agents, _ := h.repo.GetSupportAgents(r.Context())
 
-	tmpl, err := template.ParseFiles(
+	tmpl, err := template.New("base.html").Funcs(funcMap).ParseFiles(
 		"web/templates/layouts/base.html",
 		"web/templates/pages/ticket_detail.html",
 	)
@@ -242,7 +299,7 @@ func (h *TicketHandler) UpdateAssignee(w http.ResponseWriter, r *http.Request) {
 }
 
 func renderPartial(w http.ResponseWriter, templateName string, data interface{}) {
-	tmpl, err := template.ParseFiles("web/templates/partials/" + templateName)
+	tmpl, err := template.New(templateName).Funcs(funcMap).ParseFiles("web/templates/partials/" + templateName)
 	if err != nil {
 		http.Error(w, "Partial render error: "+err.Error(), http.StatusInternalServerError)
 		return

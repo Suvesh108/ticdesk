@@ -9,6 +9,15 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+type TicketFilterOptions struct {
+	Search     string
+	CategoryID int
+	Status     string
+	Priority   string
+	Page       int
+	Limit      int
+}
+
 type TicketRepository struct {
 	db *pgxpool.Pool
 }
@@ -105,7 +114,65 @@ func (r *TicketRepository) GetTicketByID(ctx context.Context, id string) (*model
 }
 
 func (r *TicketRepository) ListTickets(ctx context.Context, user *models.User) ([]models.Ticket, error) {
-	query := `
+	tickets, _, err := r.ListTicketsFiltered(ctx, user, TicketFilterOptions{Page: 1, Limit: 100})
+	return tickets, err
+}
+
+func (r *TicketRepository) ListTicketsFiltered(ctx context.Context, user *models.User, opts TicketFilterOptions) ([]models.Ticket, int, error) {
+	if opts.Page < 1 {
+		opts.Page = 1
+	}
+	if opts.Limit < 1 {
+		opts.Limit = 10
+	}
+	offset := (opts.Page - 1) * opts.Limit
+
+	whereConditions := []string{"1=1"}
+	var args []interface{}
+	argID := 1
+
+	if user.Role == models.RoleCustomer {
+		whereConditions = append(whereConditions, fmt.Sprintf("t.created_by = $%d", argID))
+		args = append(args, user.ID)
+		argID++
+	}
+
+	if opts.Search != "" {
+		whereConditions = append(whereConditions, fmt.Sprintf("(t.title ILIKE $%d OR t.description ILIKE $%d)", argID, argID))
+		args = append(args, "%"+opts.Search+"%")
+		argID++
+	}
+
+	if opts.CategoryID > 0 {
+		whereConditions = append(whereConditions, fmt.Sprintf("t.category_id = $%d", argID))
+		args = append(args, opts.CategoryID)
+		argID++
+	}
+
+	if opts.Status != "" {
+		whereConditions = append(whereConditions, fmt.Sprintf("t.status = $%d", argID))
+		args = append(args, opts.Status)
+		argID++
+	}
+
+	if opts.Priority != "" {
+		whereConditions = append(whereConditions, fmt.Sprintf("t.priority = $%d", argID))
+		args = append(args, opts.Priority)
+		argID++
+	}
+
+	whereClause := " WHERE " + fmt.Sprintf("%s", whereConditions[0])
+	for i := 1; i < len(whereConditions); i++ {
+		whereClause += " AND " + whereConditions[i]
+	}
+
+	// Count total matching items for pagination
+	countQuery := "SELECT COUNT(*) FROM tickets t " + whereClause
+	var totalCount int
+	_ = r.db.QueryRow(ctx, countQuery, args...).Scan(&totalCount)
+
+	// Fetch page slice
+	query := fmt.Sprintf(`
 		SELECT 
 			t.id, t.ticket_number, t.title, t.description, t.category_id, 
 			COALESCE(c.name, '') as category_name,
@@ -117,19 +184,16 @@ func (r *TicketRepository) ListTickets(ctx context.Context, user *models.User) (
 		LEFT JOIN categories c ON t.category_id = c.id
 		INNER JOIN users u1 ON t.created_by = u1.id
 		LEFT JOIN users u2 ON t.assigned_to = u2.id
-	`
+		%s
+		ORDER BY t.created_at DESC
+		LIMIT $%d OFFSET $%d
+	`, whereClause, argID, argID+1)
 
-	var args []interface{}
-	if user.Role == models.RoleCustomer {
-		query += ` WHERE t.created_by = $1 `
-		args = append(args, user.ID)
-	}
-
-	query += ` ORDER BY t.created_at DESC`
+	args = append(args, opts.Limit, offset)
 
 	rows, err := r.db.Query(ctx, query, args...)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list tickets: %w", err)
+		return nil, 0, fmt.Errorf("failed to list tickets: %w", err)
 	}
 	defer rows.Close()
 
@@ -143,11 +207,12 @@ func (r *TicketRepository) ListTickets(ctx context.Context, user *models.User) (
 			&t.AssignedToID, &t.AssignedToName,
 			&t.CreatedAt, &t.UpdatedAt, &t.ResolvedAt,
 		); err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		tickets = append(tickets, t)
 	}
-	return tickets, nil
+
+	return tickets, totalCount, nil
 }
 
 func (r *TicketRepository) UpdateTicketStatus(ctx context.Context, ticketID string, newStatus models.TicketStatus, changedBy string) (*models.Ticket, error) {
