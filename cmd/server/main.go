@@ -57,7 +57,7 @@ func main() {
 	ticmailRepo := repository.NewTicMailRepository(dbPool)
 
 	// Initialize Email Worker (ticMail built-in engine)
-	emailService := services.NewEmailService("ticdesk_mailhog", "1025", "notifications@ticdesk.com", ticmailRepo)
+	emailService := services.NewEmailService("localhost", "1025", "notifications@ticdesk.com", ticmailRepo)
 	emailService.StartWorker(ctx)
 
 	// Parse Templates
