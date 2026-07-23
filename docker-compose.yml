@@ -1,0 +1,49 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ticdesk_app
+    restart: always
+    ports:
+      - "8081:8081"
+    environment:
+      - PORT=8081
+      - ENV=development
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=ticdesk
+      - DB_PASSWORD=ticdesk_secret
+      - DB_NAME=ticdesk
+      - DB_SSLMODE=disable
+      - SESSION_SECRET=super-secret-key-change-in-production-32bytes
+      - SMTP_HOST=mailhog
+      - SMTP_PORT=1025
+      - SMTP_FROM=no-reply@ticdesk.local
+    depends_on:
+      - postgres
+      - mailhog
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: ticdesk_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: ticdesk
+      POSTGRES_USER: ticdesk
+      POSTGRES_PASSWORD: ticdesk_secret
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: ticdesk_mailhog
+    restart: always
+    ports:
+      - "1025:1025" # SMTP server
+      - "8025:8025" # Web UI
+
+volumes:
+  postgres_data:
