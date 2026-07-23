@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{block "title" .}}ticDesk — Helpdesk Platform{{end}}</title>
+    <title>{{block "title" .}}Outlook 365 — ticDesk Helpdesk{{end}}</title>
     
-    <meta name="description" content="ticDesk is a high-performance IT helpdesk and ticket management platform.">
+    <meta name="description" content="Microsoft Outlook 365 styled IT Helpdesk and schedule management platform.">
 
-    <!-- Fonts: Inter & JetBrains Mono -->
+    <!-- Fonts: Segoe UI & Inter from Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@300;400;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
     <!-- Tailwind CSS (CDN) & HTMX v2 & Alpine.js -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -24,23 +24,19 @@
             theme: {
                 extend: {
                     fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
+                        sans: ['Segoe UI', 'Inter', 'sans-serif'],
                         mono: ['JetBrains Mono', 'monospace'],
                     },
                     colors: {
-                        brand: {
-                            50: '#eef2ff',
-                            100: '#e0e7ff',
-                            500: '#6366f1',
-                            600: '#4f46e5',
-                            700: '#4338ca',
-                        },
-                        dark: {
-                            bg: '#0b0f17',
-                            sidebar: '#0f1523',
-                            card: '#141c2e',
-                            border: '#1e293b',
-                            input: '#0d1320',
+                        outlook: {
+                            blue: '#0078d4',
+                            darkBlue: '#106ebe',
+                            lightBlue: '#deecf9',
+                            rail: '#11100f',
+                            pane: '#1b1a19',
+                            card: '#252423',
+                            border: '#292827',
+                            hover: '#323130',
                         }
                     }
                 }
@@ -48,31 +44,41 @@
         }
     </script>
 
-    <!-- Custom CSS Design Tokens -->
+    <!-- Custom Microsoft Outlook 365 CSS Tokens -->
     <style>
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: #0b0f17;
-            color: #f8fafc;
+            font-family: 'Segoe UI', 'Inter', sans-serif;
+            background-color: #11100f;
+            color: #f3f2f1;
         }
 
-        .sidebar-card {
-            background-color: #0f1523;
-            border-right: 1px solid #1e293b;
+        .outlook-app-rail {
+            background-color: #11100f;
+            border-right: 1px solid #292827;
         }
 
-        .ui-card {
-            background-color: #141c2e;
-            border: 1px solid #1e293b;
-            border-radius: 1rem;
+        .outlook-folder-pane {
+            background-color: #1b1a19;
+            border-right: 1px solid #292827;
         }
 
-        .ui-card-hover {
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        .outlook-command-bar {
+            background-color: #1b1a19;
+            border-bottom: 1px solid #292827;
         }
-        .ui-card-hover:hover {
-            border-color: #334155;
-            transform: translateY(-1px);
+
+        .outlook-card {
+            background-color: #252423;
+            border: 1px solid #292827;
+            border-radius: 4px;
+        }
+
+        .outlook-card-hover {
+            transition: all 0.15s ease-in-out;
+        }
+        .outlook-card-hover:hover {
+            background-color: #2d2c2b;
+            border-color: #0078d4;
         }
 
         /* Custom Scrollbar */
@@ -81,99 +87,70 @@
             height: 6px;
         }
         ::-webkit-scrollbar-track {
-            background: #0b0f17;
+            background: #11100f;
         }
         ::-webkit-scrollbar-thumb {
-            background: #1e293b;
-            border-radius: 9999px;
+            background: #292827;
+            border-radius: 2px;
         }
         ::-webkit-scrollbar-thumb:hover {
-            background: #334155;
+            background: #323130;
         }
     </style>
 </head>
-<body class="h-full flex antialiased" x-data="{ sidebarOpen: false }">
+<body class="h-full flex flex-col antialiased selection:bg-sky-600 selection:text-white" x-data="{ mobilePaneOpen: false }">
 
     {{if .User}}
-    <!-- Left Navigation Sidebar -->
-    <aside class="fixed inset-y-0 left-0 z-50 w-64 sidebar-card flex flex-col justify-between transition-transform duration-300 lg:translate-x-0"
-           :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'">
-        
-        <div class="p-5 space-y-6">
-            <!-- Brand Logo -->
-            <div class="flex items-center justify-between">
-                <a href="/dashboard" class="flex items-center space-x-3 group">
-                    <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-600 via-brand-500 to-indigo-400 flex items-center justify-center shadow-lg shadow-brand-500/20 group-hover:scale-105 transition-transform duration-200">
-                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                        </svg>
-                    </div>
-                    <div>
-                        <span class="text-base font-extrabold text-white tracking-tight">tic<span class="text-brand-500">Desk</span></span>
-                        <span class="text-[10px] text-slate-500 block leading-none mt-0.5">Helpdesk Workspace</span>
-                    </div>
-                </a>
-                <button @click="sidebarOpen = false" class="lg:hidden p-1 rounded-lg text-slate-400 hover:text-white">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-            </div>
+    <!-- Top Microsoft Outlook Header Ribbon -->
+    <header class="h-12 outlook-command-bar flex items-center justify-between px-3 z-40 shrink-0">
+        <!-- Brand & Mobile Toggle -->
+        <div class="flex items-center space-x-3">
+            <button @click="mobilePaneOpen = !mobilePaneOpen" class="md:hidden p-1.5 text-slate-400 hover:text-white rounded">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                </svg>
+            </button>
 
-            <!-- Navigation Links -->
-            <nav class="space-y-1 pt-2">
-                <div class="px-3 pb-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">Main Menu</div>
-                
-                <a href="/dashboard" class="flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 text-slate-300 hover:text-white hover:bg-slate-800/60">
-                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path>
-                    </svg>
-                    <span>Dashboard</span>
-                </a>
-
-                <a href="/tickets" class="flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 text-slate-300 hover:text-white hover:bg-slate-800/60">
-                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 001 1.732V15a2 2 0 00-1 1.732V20a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 00-1-1.732V10a2 2 0 001-1.732V7a2 2 0 00-2-2H5z"></path>
-                    </svg>
-                    <span>All Tickets</span>
-                </a>
-
-                <a href="/tickets/new" class="flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 text-slate-300 hover:text-white hover:bg-slate-800/60">
-                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                    </svg>
-                    <span>New Ticket</span>
-                </a>
-
-                {{if eq .User.Role "admin"}}
-                <div class="px-3 pt-4 pb-2 text-[10px] font-bold uppercase tracking-wider text-amber-400/80">Administration</div>
-                <a href="/admin/users" class="flex items-center space-x-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 text-amber-400 hover:bg-amber-500/10 border border-amber-500/20">
-                    <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
-                    </svg>
-                    <span>User Management</span>
-                </a>
-                {{end}}
-            </nav>
+            <!-- Microsoft 365 Logo Icon -->
+            <a href="/dashboard" class="flex items-center space-x-2.5">
+                <div class="w-7 h-7 bg-sky-600 rounded flex items-center justify-center font-bold text-white text-xs shadow-sm">
+                    365
+                </div>
+                <span class="text-sm font-bold text-white tracking-tight">Outlook <span class="text-sky-400 font-normal">ticDesk</span></span>
+            </a>
         </div>
 
-        <!-- User Profile Card -->
-        <div class="p-4 border-t border-slate-800 bg-slate-950/50">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-3 min-w-0">
-                    <div class="w-9 h-9 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-bold text-white shrink-0">
-                        {{slice .User.Name 0 1}}
-                    </div>
-                    <div class="truncate">
-                        <p class="text-xs font-semibold text-white truncate">{{.User.Name}}</p>
-                        <span class="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded text-brand-400 bg-brand-500/10">
-                            {{.User.Role}}
-                        </span>
-                    </div>
-                </div>
+        <!-- Global Search Input -->
+        <div class="hidden sm:flex items-center flex-1 max-w-md mx-6">
+            <div class="relative w-full">
+                <input type="text" placeholder="Search Mail, Tickets, Notes & Schedule Events..." 
+                       class="w-full bg-[#252423] border border-[#323130] rounded px-8 py-1 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-sky-500 transition-colors">
+                <svg class="w-4 h-4 text-slate-400 absolute left-2.5 top-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+            </div>
+        </div>
 
-                <form action="/logout" method="POST" class="inline shrink-0">
-                    <button type="submit" class="p-2 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors" title="Sign out">
+        <!-- Top Right Actions & User Profile -->
+        <div class="flex items-center space-x-3">
+            <a href="/tickets/new" class="px-3 py-1 bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold rounded flex items-center space-x-1.5 transition-colors shadow-sm">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                </svg>
+                <span>New Ticket</span>
+            </a>
+
+            <div class="flex items-center space-x-2 pl-2 border-l border-[#292827]">
+                <div class="w-7 h-7 rounded-full bg-sky-700 text-white flex items-center justify-center text-xs font-bold border border-sky-500">
+                    {{slice .User.Name 0 1}}
+                </div>
+                <span class="text-xs font-semibold text-slate-200 hidden md:inline">{{.User.Name}}</span>
+                <span class="text-[9px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-400 border border-sky-500/30">
+                    {{.User.Role}}
+                </span>
+
+                <form action="/logout" method="POST" class="inline">
+                    <button type="submit" class="p-1.5 text-slate-400 hover:text-rose-400 rounded transition-colors" title="Sign Out">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
                         </svg>
@@ -181,47 +158,136 @@
                 </form>
             </div>
         </div>
-    </aside>
+    </header>
     {{end}}
 
-    <!-- Main Content Area -->
-    <div class="flex-1 flex flex-col min-w-0 {{if .User}}lg:pl-64{{end}}">
-        
-        <!-- Mobile Top Navbar -->
+    <!-- Main Outer Flex Body -->
+    <div class="flex-1 flex overflow-hidden">
+
         {{if .User}}
-        <header class="lg:hidden sticky top-0 z-40 w-full sidebar-card px-4 py-3 flex items-center justify-between border-b border-slate-800">
-            <div class="flex items-center space-x-3">
-                <button @click="sidebarOpen = true" class="p-2 rounded-lg text-slate-400 hover:text-white bg-slate-900 border border-slate-800">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-                    </svg>
-                </button>
-                <span class="text-sm font-bold text-white">tic<span class="text-brand-500">Desk</span></span>
-            </div>
-            
-            <a href="/tickets/new" class="px-3 py-1.5 rounded-lg bg-brand-600 text-white text-xs font-semibold">
-                + New
+        <!-- 1. Far Left Outlook App Rail (Width: 50px) -->
+        <nav class="w-12 outlook-app-rail hidden md:flex flex-col items-center py-4 space-y-5 shrink-0 z-30">
+            <!-- Today / Overview -->
+            <a href="/dashboard" class="p-2 rounded text-slate-400 hover:text-white hover:bg-[#252423] transition-colors" title="Today / Dashboard">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                </svg>
             </a>
-        </header>
+
+            <!-- Mail / Tickets -->
+            <a href="/tickets" class="p-2 rounded text-slate-400 hover:text-white hover:bg-[#252423] transition-colors" title="Mail & Support Tickets">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                </svg>
+            </a>
+
+            <!-- Calendar & Schedule -->
+            <a href="/calendar" class="p-2 rounded text-slate-400 hover:text-white hover:bg-[#252423] transition-colors" title="Calendar & Shift Schedule">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+            </a>
+
+            <!-- Notes & Scratchpad -->
+            <a href="/notes" class="p-2 rounded text-slate-400 hover:text-white hover:bg-[#252423] transition-colors" title="Personal & Shift Notes">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                </svg>
+            </a>
+
+            {{if eq .User.Role "admin"}}
+            <!-- User Management Directory -->
+            <a href="/admin/users" class="p-2 rounded text-amber-400 hover:bg-[#252423] transition-colors" title="Admin User Directory">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                </svg>
+            </a>
+            {{end}}
+        </nav>
+
+        <!-- 2. Secondary Outlook Folder Pane (Width: 220px) -->
+        <aside class="w-56 outlook-folder-pane hidden md:flex flex-col p-3 space-y-4 shrink-0 overflow-y-auto z-20">
+            
+            <!-- Favorites Section -->
+            <div class="space-y-1">
+                <div class="px-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">Favorites</div>
+                
+                <a href="/tickets" class="flex items-center justify-between px-2.5 py-1.5 rounded text-xs font-semibold text-slate-300 hover:text-white hover:bg-[#252423]">
+                    <span class="flex items-center space-x-2">
+                        <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+                        </svg>
+                        <span>Inbox (Tickets)</span>
+                    </span>
+                </a>
+
+                <a href="/calendar" class="flex items-center justify-between px-2.5 py-1.5 rounded text-xs font-semibold text-slate-300 hover:text-white hover:bg-[#252423]">
+                    <span class="flex items-center space-x-2">
+                        <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                        <span>Schedule</span>
+                    </span>
+                </a>
+
+                <a href="/notes" class="flex items-center justify-between px-2.5 py-1.5 rounded text-xs font-semibold text-slate-300 hover:text-white hover:bg-[#252423]">
+                    <span class="flex items-center space-x-2">
+                        <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                        </svg>
+                        <span>Shift Notes</span>
+                    </span>
+                </a>
+            </div>
+
+            <!-- Folders Section -->
+            <div class="space-y-1 pt-3 border-t border-[#292827]">
+                <div class="px-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">Folders</div>
+                
+                <a href="/dashboard" class="flex items-center space-x-2 px-2.5 py-1.5 rounded text-xs font-medium text-slate-300 hover:text-white hover:bg-[#252423]">
+                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path>
+                    </svg>
+                    <span>Today Overview</span>
+                </a>
+
+                <a href="/tickets/new" class="flex items-center space-x-2 px-2.5 py-1.5 rounded text-xs font-medium text-slate-300 hover:text-white hover:bg-[#252423]">
+                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                    <span>New Ticket</span>
+                </a>
+
+                {{if eq .User.Role "admin"}}
+                <a href="/admin/users" class="flex items-center space-x-2 px-2.5 py-1.5 rounded text-xs font-medium text-amber-400 hover:bg-[#252423]">
+                    <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                    </svg>
+                    <span>User Directory</span>
+                </a>
+                {{end}}
+            </div>
+
+        </aside>
         {{end}}
 
-        <!-- Main Content -->
-        <main class="flex-grow p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
-            {{block "content" .}}{{end}}
-        </main>
-
-        <!-- Footer -->
-        <footer class="border-t border-slate-900 py-4 px-6 text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-2">
-            <p>&copy; 2026 ticDesk Inc. All rights reserved.</p>
-            <div class="flex items-center space-x-3">
-                <span class="inline-flex items-center space-x-1">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                    <span class="text-slate-400">System Healthy</span>
-                </span>
-                <span>•</span>
-                <span>Go + HTMX v2 + Alpine + Postgres</span>
+        <!-- 3. Main Reading & Content Pane -->
+        <main class="flex-1 flex flex-col min-w-0 bg-[#11100f] overflow-y-auto">
+            <div class="p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto flex-grow">
+                {{block "content" .}}{{end}}
             </div>
-        </footer>
+
+            <!-- Footer -->
+            <footer class="border-t border-[#292827] bg-[#11100f] py-3 px-6 text-xs text-slate-400 flex items-center justify-between">
+                <p>&copy; 2026 ticDesk Inc. Microsoft Outlook 365 Enterprise Workstation.</p>
+                <div class="flex items-center space-x-3 text-[11px]">
+                    <span class="inline-flex items-center space-x-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                        <span class="text-slate-400">Connected to Exchange Server</span>
+                    </span>
+                </div>
+            </footer>
+        </main>
     </div>
 
 </body>

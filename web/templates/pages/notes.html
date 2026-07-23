@@ -1,0 +1,96 @@
+{{template "base.html" .}}
+
+{{define "title"}}Shift Notes — Outlook 365{{end}}
+
+{{define "content"}}
+<div class="space-y-6">
+
+    <!-- Top Ribbon Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#292827]">
+        <div>
+            <div class="inline-flex items-center space-x-1.5 px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-bold uppercase tracking-wider mb-1">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                </svg>
+                <span>Outlook 365 Sticky Notes</span>
+            </div>
+            <h1 class="text-xl font-bold text-white tracking-tight">Support Notes & Scratchpad</h1>
+            <p class="text-xs text-slate-400 mt-0.5">Quick reference notes, IP credentials, shift handovers, and checklist items</p>
+        </div>
+    </div>
+
+    <!-- Create Note Card -->
+    <div class="outlook-card p-5">
+        <h2 class="text-xs font-bold uppercase tracking-wider text-slate-300 pb-2 border-b border-[#292827] mb-3">Create New Note</h2>
+
+        <form action="/notes" method="POST" class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+            <div class="sm:col-span-2">
+                <input type="text" name="title" required placeholder="Note Title (e.g., VPN Gateway Credential Reference)" 
+                       class="w-full px-3 py-2 bg-[#1b1a19] border border-[#323130] rounded text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500">
+            </div>
+
+            <div>
+                <select name="color" class="w-full px-3 py-2 bg-[#1b1a19] border border-[#323130] rounded text-xs text-slate-200 focus:outline-none focus:border-sky-500">
+                    <option value="blue">🟦 Outlook Blue Tag</option>
+                    <option value="amber">🟧 Amber Priority Tag</option>
+                    <option value="emerald">🟩 Emerald Solved Tag</option>
+                    <option value="purple">🟪 Purple Admin Tag</option>
+                </select>
+            </div>
+
+            <div>
+                <button type="submit" class="w-full py-2 bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs rounded transition-colors shadow-sm">
+                    + Add Sticky Note
+                </button>
+            </div>
+
+            <div class="sm:col-span-4">
+                <textarea name="content" rows="2" required placeholder="Write details, IP addresses, procedures, or handoff notes..." 
+                          class="w-full px-3 py-2 bg-[#1b1a19] border border-[#323130] rounded text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"></textarea>
+            </div>
+        </form>
+    </div>
+
+    <!-- Notes Grid Container -->
+    <div class="space-y-3">
+        <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400">Pinned & Recent Notes</h2>
+
+        {{if .Notes}}
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {{range .Notes}}
+                    <div class="p-4 rounded border transition-all relative group flex flex-col justify-between {{if eq .Color "amber"}}bg-amber-950/20 border-amber-500/30{{else if eq .Color "emerald"}}bg-emerald-950/20 border-emerald-500/30{{else if eq .Color "purple"}}bg-purple-950/20 border-purple-500/30{{else}}bg-sky-950/20 border-sky-500/30{{end}}">
+                        
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-xs font-bold text-white pr-6">{{.Title}}</h3>
+                                <form action="/notes/{{.ID}}/pin" method="POST" class="absolute top-3 right-3">
+                                    <button type="submit" class="text-slate-400 hover:text-amber-400 transition-colors" title="Pin note">
+                                        📌
+                                    </button>
+                                </form>
+                            </div>
+
+                            <p class="text-xs text-slate-300 whitespace-pre-line leading-relaxed">{{.Content}}</p>
+                        </div>
+
+                        <div class="flex items-center justify-between pt-3 mt-3 border-t border-slate-800 text-[10px] text-slate-500 font-mono">
+                            <span>{{.CreatedAt.Format "Jan 02, 15:04"}}</span>
+
+                            <form action="/notes/{{.ID}}/delete" method="POST">
+                                <button type="submit" class="text-slate-500 hover:text-rose-400 transition-colors" title="Delete note">
+                                    Delete
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                {{end}}
+            </div>
+        {{else}}
+            <div class="text-center py-10 border border-dashed border-[#292827] rounded bg-[#1b1a19]">
+                <p class="text-xs text-slate-400">No shift notes found. Add your first note above.</p>
+            </div>
+        {{end}}
+    </div>
+
+</div>
+{{end}}

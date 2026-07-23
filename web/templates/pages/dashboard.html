@@ -1,125 +1,99 @@
 {{template "base.html" .}}
 
-{{define "title"}}Dashboard — ticDesk{{end}}
+{{define "title"}}Today Overview — Outlook 365{{end}}
 
 {{define "content"}}
-<div class="space-y-8">
+<div class="space-y-6">
 
-    <!-- Top Page Title & Quick Actions -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800/80">
+    <!-- Top Ribbon Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#292827]">
         <div>
-            <h1 class="text-2xl font-bold text-white tracking-tight">Overview Dashboard</h1>
-            <p class="text-xs text-slate-400 mt-1">Real-time IT helpdesk performance metrics & active support queues</p>
+            <div class="inline-flex items-center space-x-1.5 px-2 py-0.5 rounded bg-sky-500/10 border border-sky-500/20 text-sky-400 text-[10px] font-bold uppercase tracking-wider mb-1">
+                <span>Outlook 365 Today</span>
+            </div>
+            <h1 class="text-xl font-bold text-white tracking-tight">Helpdesk Workstation & Today Overview</h1>
+            <p class="text-xs text-slate-400 mt-0.5">Real-time ticket queues, SLA metrics, schedule events, and agent workload</p>
         </div>
 
-        <div class="flex items-center space-x-3">
-            <a href="/tickets/new" class="px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-semibold text-xs shadow-lg shadow-brand-500/20 transition-all flex items-center space-x-2">
+        <div class="flex items-center space-x-2">
+            <a href="/tickets/new" class="px-3.5 py-1.5 bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs rounded transition-colors shadow-sm flex items-center space-x-1.5">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                 </svg>
-                <span>Create New Ticket</span>
+                <span>New Ticket</span>
+            </a>
+            <a href="/calendar" class="px-3 py-1.5 bg-[#252423] hover:bg-[#2d2c2b] border border-[#323130] text-slate-300 text-xs font-semibold rounded transition-colors">
+                View Calendar
             </a>
         </div>
     </div>
 
-    <!-- KPI Metric Summary Grid -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+    <!-- 4 Outlook KPI Summary Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <!-- Open Tickets Card -->
-        <div class="ui-card ui-card-hover p-5">
-            <div class="flex items-center justify-between mb-3">
-                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Open Tickets</span>
-                <div class="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                </div>
+        <div class="outlook-card outlook-card-hover p-4">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Open Tickets</span>
+                <span class="w-2 h-2 rounded-full bg-sky-400"></span>
             </div>
-            <div class="text-3xl font-extrabold text-white">{{.Stats.OpenCount}}</div>
-            <p class="text-[11px] text-slate-400 mt-2 flex items-center space-x-1">
-                <span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
-                <span>Awaiting response</span>
-            </p>
+            <div class="text-2xl font-extrabold text-white">{{.Stats.OpenCount}}</div>
+            <p class="text-[10px] text-slate-400 mt-1">Awaiting support response</p>
         </div>
 
         <!-- In Progress Card -->
-        <div class="ui-card ui-card-hover p-5">
-            <div class="flex items-center justify-between mb-3">
-                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">In Progress</span>
-                <div class="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                    </svg>
-                </div>
+        <div class="outlook-card outlook-card-hover p-4">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">In Progress</span>
+                <span class="w-2 h-2 rounded-full bg-amber-400"></span>
             </div>
-            <div class="text-3xl font-extrabold text-white">{{.Stats.InProgressCount}}</div>
-            <p class="text-[11px] text-slate-400 mt-2 flex items-center space-x-1">
-                <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
-                <span>Under investigation</span>
-            </p>
+            <div class="text-2xl font-extrabold text-white">{{.Stats.InProgressCount}}</div>
+            <p class="text-[10px] text-slate-400 mt-1">Under active investigation</p>
         </div>
 
         <!-- Resolved Card -->
-        <div class="ui-card ui-card-hover p-5">
-            <div class="flex items-center justify-between mb-3">
-                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Resolved</span>
-                <div class="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                </div>
+        <div class="outlook-card outlook-card-hover p-4">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Resolved</span>
+                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
             </div>
-            <div class="text-3xl font-extrabold text-white">{{.Stats.ResolvedCount}}</div>
-            <p class="text-[11px] text-slate-400 mt-2 flex items-center space-x-1">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                <span>Successfully completed</span>
-            </p>
+            <div class="text-2xl font-extrabold text-white">{{.Stats.ResolvedCount}}</div>
+            <p class="text-[10px] text-slate-400 mt-1">Completed issues</p>
         </div>
 
         <!-- Avg SLA Resolution -->
-        <div class="ui-card ui-card-hover p-5">
-            <div class="flex items-center justify-between mb-3">
-                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Avg Resolution</span>
-                <div class="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                </div>
+        <div class="outlook-card outlook-card-hover p-4">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Avg Resolution</span>
+                <span class="w-2 h-2 rounded-full bg-purple-400"></span>
             </div>
-            <div class="text-3xl font-extrabold text-white">{{.Stats.AvgResolutionTime}}</div>
-            <p class="text-[11px] text-slate-400 mt-2 flex items-center space-x-1">
-                <span class="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
-                <span>SLA turn-around time</span>
-            </p>
+            <div class="text-2xl font-extrabold text-white">{{.Stats.AvgResolutionTime}}</div>
+            <p class="text-[10px] text-slate-400 mt-1">SLA turnaround metric</p>
         </div>
     </div>
 
-    <!-- Main 2-Column Content Layout -->
+    <!-- Main Content Layout -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        <!-- Left Column (2/3): Recent Tickets Table -->
-        <div class="lg:col-span-2 ui-card p-6 space-y-4">
-            <div class="flex items-center justify-between pb-3 border-b border-slate-800">
-                <div>
-                    <h2 class="text-sm font-bold text-white uppercase tracking-wider">Recent Tickets</h2>
-                    <p class="text-[11px] text-slate-400 mt-0.5">Active issues requiring attention</p>
-                </div>
-                <a href="/tickets" class="text-xs font-semibold text-brand-400 hover:text-brand-300 transition-colors">View all →</a>
+        <!-- Left (2/3): Recent Inbox Tickets -->
+        <div class="lg:col-span-2 outlook-card p-5 space-y-4">
+            <div class="flex items-center justify-between pb-2 border-b border-[#292827]">
+                <h2 class="text-xs font-bold uppercase tracking-wider text-slate-300">Inbox Active Tickets</h2>
+                <a href="/tickets" class="text-xs text-sky-400 hover:underline">Open Inbox →</a>
             </div>
 
             {{if .Tickets}}
-                <div class="divide-y divide-slate-800/60">
+                <div class="divide-y divide-[#292827]">
                     {{range .Tickets}}
-                        <div class="py-3.5 flex items-center justify-between hover:bg-slate-900/40 px-3 rounded-xl transition-colors">
+                        <div class="py-3 flex items-center justify-between hover:bg-[#1b1a19] px-2 rounded transition-colors">
                             <div class="flex items-center space-x-3 min-w-0 pr-4">
-                                <span class="font-mono text-xs font-bold text-brand-400 shrink-0">#{{.TicketNumber}}</span>
-                                <a href="/tickets/{{.ID}}" class="text-xs font-semibold text-white hover:text-brand-400 truncate transition-colors">
+                                <span class="font-mono text-xs font-bold text-sky-400 shrink-0">#{{.TicketNumber}}</span>
+                                <a href="/tickets/{{.ID}}" class="text-xs font-medium text-white hover:text-sky-400 truncate">
                                     {{.Title}}
                                 </a>
                             </div>
 
-                            <div class="flex items-center space-x-3 shrink-0">
-                                <span class="text-[11px] text-slate-400 hidden sm:inline">{{.CategoryName}}</span>
-                                <span class="px-2.5 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wider {{if eq .Status "open"}}bg-blue-500/10 text-blue-400 border border-blue-500/20{{else if eq .Status "in_progress"}}bg-amber-500/10 text-amber-400 border border-amber-500/20{{else}}bg-emerald-500/10 text-emerald-400 border border-emerald-500/20{{end}}">
+                            <div class="flex items-center space-x-2 shrink-0">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase {{if eq .Status "open"}}bg-sky-500/10 text-sky-400 border border-sky-500/20{{else if eq .Status "in_progress"}}bg-amber-500/10 text-amber-400 border border-amber-500/20{{else}}bg-emerald-500/10 text-emerald-400 border border-emerald-500/20{{end}}">
                                     {{.Status}}
                                 </span>
                             </div>
@@ -127,46 +101,41 @@
                     {{end}}
                 </div>
             {{else}}
-                <div class="text-center py-10 border border-dashed border-slate-800 rounded-xl bg-slate-950/30">
-                    <p class="text-xs text-slate-400">No tickets found in workspace.</p>
+                <div class="text-center py-8 border border-dashed border-[#292827] rounded bg-[#1b1a19]">
+                    <p class="text-xs text-slate-400">No active tickets found.</p>
                 </div>
             {{end}}
         </div>
 
-        <!-- Right Column (1/3): Category Breakdown & Agent Workload -->
+        <!-- Right (1/3): Quick Calendar & Agent Workload -->
         <div class="space-y-6">
-            <!-- Category Distribution -->
-            <div class="ui-card p-6 space-y-4">
-                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 pb-2 border-b border-slate-800">Categories</h3>
-                <div class="space-y-3">
+            <!-- Categories Card -->
+            <div class="outlook-card p-5 space-y-3">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 pb-2 border-b border-[#292827]">Categories Breakdown</h3>
+                <div class="space-y-2.5">
                     {{range .Stats.CategoryDistribution}}
                         <div>
                             <div class="flex justify-between text-xs mb-1">
                                 <span class="text-slate-300 font-medium">{{.Name}}</span>
-                                <span class="text-slate-400 font-mono text-[11px]">{{.Count}} tickets</span>
+                                <span class="text-slate-400 font-mono text-[11px]">{{.Count}}</span>
                             </div>
-                            <div class="w-full bg-slate-900 rounded-full h-1.5 overflow-hidden border border-slate-800">
-                                <div class="bg-gradient-to-r from-brand-600 to-indigo-400 h-1.5 rounded-full" style="width: {{if gt .Count 0}}100%{{else}}0%{{end}}"></div>
+                            <div class="w-full bg-[#1b1a19] rounded h-1.5 overflow-hidden border border-[#292827]">
+                                <div class="bg-sky-500 h-1.5 rounded" style="width: {{if gt .Count 0}}100%{{else}}0%{{end}}"></div>
                             </div>
                         </div>
                     {{end}}
                 </div>
             </div>
 
-            <!-- Support Agent Queue -->
-            <div class="ui-card p-6 space-y-4">
-                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 pb-2 border-b border-slate-800">Support Staff Queue</h3>
-                <div class="space-y-2.5">
+            <!-- Support Agent Shift Queue -->
+            <div class="outlook-card p-5 space-y-3">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 pb-2 border-b border-[#292827]">Support Shift Workload</h3>
+                <div class="space-y-2">
                     {{range .Stats.AgentWorkload}}
-                        <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-900/60 border border-slate-800">
-                            <div class="flex items-center space-x-2.5">
-                                <div class="w-7 h-7 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-xs font-bold text-brand-400">
-                                    {{slice .AgentName 0 1}}
-                                </div>
-                                <span class="text-xs font-medium text-slate-200">{{.AgentName}}</span>
-                            </div>
-                            <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold {{if gt .OpenCount 0}}bg-amber-500/10 text-amber-400 border border-amber-500/20{{else}}bg-slate-800 text-slate-400{{end}}">
-                                {{.OpenCount}} open
+                        <div class="flex items-center justify-between p-2 rounded bg-[#1b1a19] border border-[#292827]">
+                            <span class="text-xs font-medium text-slate-200">{{.AgentName}}</span>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                                {{.OpenCount}} active
                             </span>
                         </div>
                     {{end}}

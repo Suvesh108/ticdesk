@@ -19,6 +19,8 @@ func New(
 	commentHandler *handlers.CommentHandler,
 	attachmentHandler *handlers.AttachmentHandler,
 	adminHandler *handlers.AdminHandler,
+	calendarHandler *handlers.CalendarHandler,
+	noteHandler *handlers.NoteHandler,
 ) http.Handler {
 	r := chi.NewRouter()
 
@@ -56,6 +58,17 @@ func New(
 		r.Get("/tickets/new", ticketHandler.ShowNewTicket)
 		r.Post("/tickets", ticketHandler.ProcessCreateTicket)
 		r.Get("/tickets/{id}", ticketHandler.ShowTicketDetail)
+
+		// Outlook Calendar Routes
+		r.Get("/calendar", calendarHandler.RenderCalendar)
+		r.Post("/calendar/events", calendarHandler.CreateEvent)
+		r.Post("/calendar/events/{id}/delete", calendarHandler.DeleteEvent)
+
+		// Outlook Notes Routes
+		r.Get("/notes", noteHandler.RenderNotes)
+		r.Post("/notes", noteHandler.CreateNote)
+		r.Post("/notes/{id}/pin", noteHandler.TogglePin)
+		r.Post("/notes/{id}/delete", noteHandler.DeleteNote)
 
 		// HTMX Partial Mutation Routes
 		r.Patch("/tickets/{id}/status", ticketHandler.UpdateStatus)

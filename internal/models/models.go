@@ -107,14 +107,39 @@ type AgentStat struct {
 }
 
 type DashboardStats struct {
-	OpenCount          int            `json:"open_count"`
-	InProgressCount    int            `json:"in_progress_count"`
-	ResolvedCount      int            `json:"resolved_count"`
-	ClosedCount        int            `json:"closed_count"`
-	LowPriorityCount   int            `json:"low_priority_count"`
-	MediumPriorityCount int           `json:"medium_priority_count"`
-	HighPriorityCount  int            `json:"high_priority_count"`
-	AvgResolutionTime  string         `json:"avg_resolution_time"`
+	OpenCount            int            `json:"open_count"`
+	InProgressCount      int            `json:"in_progress_count"`
+	ResolvedCount        int            `json:"resolved_count"`
+	ClosedCount          int            `json:"closed_count"`
+	LowPriorityCount     int            `json:"low_priority_count"`
+	MediumPriorityCount   int            `json:"medium_priority_count"`
+	HighPriorityCount    int            `json:"high_priority_count"`
+	AvgResolutionTime    string         `json:"avg_resolution_time"`
 	CategoryDistribution []CategoryStat `json:"category_distribution"`
-	AgentWorkload      []AgentStat    `json:"agent_workload"`
+	AgentWorkload        []AgentStat    `json:"agent_workload"`
+}
+
+// Outlook Calendar Schedule Event
+type ScheduleEvent struct {
+	ID            string    `json:"id"`
+	Title         string    `json:"title"`
+	Description   string    `json:"description"`
+	EventType     string    `json:"event_type"` // 'maintenance', 'shift', 'deadline'
+	StartTime     time.Time `json:"start_time"`
+	EndTime       time.Time `json:"end_time"`
+	CreatedByID   string    `json:"created_by_id"`
+	CreatedByName string    `json:"created_by_name,omitempty"`
+	CreatedAt     time.Time `json:"created_at"`
+}
+
+// Outlook Personal & Team Scratchpad Notes
+type UserNote struct {
+	ID        string    `json:"id"`
+	UserID    string    `json:"user_id"`
+	Title     string    `json:"title"`
+	Content   string    `json:"content"`
+	Color     string    `json:"color"` // 'blue', 'amber', 'emerald', 'purple'
+	IsPinned  bool      `json:"is_pinned"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }

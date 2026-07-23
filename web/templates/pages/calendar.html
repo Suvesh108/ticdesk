@@ -1,0 +1,118 @@
+{{template "base.html" .}}
+
+{{define "title"}}Calendar & Schedule — Outlook 365{{end}}
+
+{{define "content"}}
+<div class="space-y-6">
+
+    <!-- Top Ribbon Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#292827]">
+        <div>
+            <div class="inline-flex items-center space-x-1.5 px-2 py-0.5 rounded bg-sky-500/10 border border-sky-500/20 text-sky-400 text-[10px] font-bold uppercase tracking-wider mb-1">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+                <span>Outlook 365 Calendar</span>
+            </div>
+            <h1 class="text-xl font-bold text-white tracking-tight">Support Schedule & Maintenance Events</h1>
+            <p class="text-xs text-slate-400 mt-0.5">Manage support shifts, system maintenance windows, and SLA deadlines</p>
+        </div>
+    </div>
+
+    <!-- Main 2-Column Grid: Event Form + Agenda Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Left Column (1/3): Add Schedule Event Form -->
+        <div class="outlook-card p-5 space-y-4 self-start">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-slate-300 pb-2 border-b border-[#292827]">New Schedule Event</h2>
+
+            <form action="/calendar/events" method="POST" class="space-y-3">
+                <div>
+                    <label for="title" class="block text-[11px] font-semibold text-slate-400 mb-1">Event Title</label>
+                    <input type="text" id="title" name="title" required placeholder="Server Maintenance / Shift Support" 
+                           class="w-full px-3 py-2 bg-[#1b1a19] border border-[#323130] rounded text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500">
+                </div>
+
+                <div>
+                    <label for="event_type" class="block text-[11px] font-semibold text-slate-400 mb-1">Category</label>
+                    <select id="event_type" name="event_type" 
+                            class="w-full px-3 py-2 bg-[#1b1a19] border border-[#323130] rounded text-xs text-slate-200 focus:outline-none focus:border-sky-500">
+                        <option value="maintenance">🔧 Maintenance Window</option>
+                        <option value="shift">🛡️ Support Shift Schedule</option>
+                        <option value="deadline">⏰ SLA Deadline Target</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label for="start_time" class="block text-[11px] font-semibold text-slate-400 mb-1">Start Time</label>
+                        <input type="datetime-local" id="start_time" name="start_time" required 
+                               class="w-full px-2 py-1.5 bg-[#1b1a19] border border-[#323130] rounded text-[11px] text-white focus:outline-none focus:border-sky-500">
+                    </div>
+                    <div>
+                        <label for="end_time" class="block text-[11px] font-semibold text-slate-400 mb-1">End Time</label>
+                        <input type="datetime-local" id="end_time" name="end_time" required 
+                               class="w-full px-2 py-1.5 bg-[#1b1a19] border border-[#323130] rounded text-[11px] text-white focus:outline-none focus:border-sky-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="description" class="block text-[11px] font-semibold text-slate-400 mb-1">Notes / Description</label>
+                    <textarea id="description" name="description" rows="3" placeholder="Additional instructions..." 
+                              class="w-full px-3 py-2 bg-[#1b1a19] border border-[#323130] rounded text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"></textarea>
+                </div>
+
+                <button type="submit" class="w-full py-2 bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs rounded transition-colors shadow-sm">
+                    + Add to Calendar
+                </button>
+            </form>
+        </div>
+
+        <!-- Right Column (2/3): Calendar Agenda Events List -->
+        <div class="lg:col-span-2 outlook-card p-5 space-y-4">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-slate-300 pb-2 border-b border-[#292827]">Scheduled Events Agenda</h2>
+
+            {{if .Events}}
+                <div class="space-y-3">
+                    {{range .Events}}
+                        <div class="p-3.5 rounded bg-[#1b1a19] border border-[#292827] hover:border-sky-500/40 transition-all flex items-start justify-between">
+                            <div class="space-y-1">
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-xs font-bold text-white">{{.Title}}</span>
+                                    <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded {{if eq .EventType "maintenance"}}bg-amber-500/20 text-amber-400 border border-amber-500/30{{else if eq .EventType "shift"}}bg-sky-500/20 text-sky-400 border border-sky-500/30{{else}}bg-rose-500/20 text-rose-400 border border-rose-500/30{{end}}">
+                                        {{.EventType}}
+                                    </span>
+                                </div>
+
+                                {{if .Description}}
+                                    <p class="text-xs text-slate-400">{{.Description}}</p>
+                                {{end}}
+
+                                <div class="flex items-center space-x-3 text-[11px] text-slate-500 font-mono pt-1">
+                                    <span>🕒 {{.StartTime.Format "Jan 02, 15:04"}} - {{.EndTime.Format "15:04"}}</span>
+                                    <span>•</span>
+                                    <span>By {{.CreatedByName}}</span>
+                                </div>
+                            </div>
+
+                            <form action="/calendar/events/{{.ID}}/delete" method="POST">
+                                <button type="submit" class="p-1 text-slate-500 hover:text-rose-400 rounded transition-colors" title="Delete event">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
+                                </button>
+                            </form>
+                        </div>
+                    {{end}}
+                </div>
+            {{else}}
+                <div class="text-center py-12 border border-dashed border-[#292827] rounded bg-[#1b1a19]">
+                    <p class="text-xs text-slate-400">No scheduled calendar events found. Use the form on the left to schedule a new event.</p>
+                </div>
+            {{end}}
+        </div>
+
+    </div>
+
+</div>
+{{end}}

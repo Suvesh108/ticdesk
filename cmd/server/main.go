@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"html/template"
 	"log"
 	"net/http"
 	"os"
@@ -55,6 +56,15 @@ func main() {
 	ticketRepo := repository.NewTicketRepository(dbPool)
 	commentRepo := repository.NewCommentRepository(dbPool)
 	attachmentRepo := repository.NewAttachmentRepository(dbPool)
+	scheduleRepo := repository.NewScheduleRepository(dbPool)
+	noteRepo := repository.NewNoteRepository(dbPool)
+
+	// Parse Templates
+	tmpl := template.Must(template.New("").Funcs(template.FuncMap{
+		"sub": func(a, b int) int { return a - b },
+		"add": func(a, b int) int { return a + b },
+		"mul": func(a, b int) int { return a * b },
+	}).ParseGlob("web/templates/**/*.html"))
 
 	// Initialize Handlers
 	authHandler := handlers.NewAuthHandler(userRepo)
@@ -63,6 +73,8 @@ func main() {
 	commentHandler := handlers.NewCommentHandler(commentRepo, attachmentRepo, ticketRepo, storageService, emailService)
 	attachmentHandler := handlers.NewAttachmentHandler(attachmentRepo, ticketRepo)
 	adminHandler := handlers.NewAdminHandler(userRepo)
+	calendarHandler := handlers.NewCalendarHandler(scheduleRepo, tmpl)
+	noteHandler := handlers.NewNoteHandler(noteRepo, tmpl)
 
 	// Build Router
 	r := router.New(
@@ -73,6 +85,8 @@ func main() {
 		commentHandler,
 		attachmentHandler,
 		adminHandler,
+		calendarHandler,
+		noteHandler,
 	)
 
 	srv := &http.Server{
