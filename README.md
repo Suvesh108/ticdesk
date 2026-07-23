@@ -36,7 +36,7 @@
 - 📊 **Real-time Analytics**: SQL aggregate queries for ticket statuses, priority breakdown, SLA resolution averages (`AVG(resolved_at - created_at)`), and agent workload queues.
 - 📧 **Asynchronous Email Worker Queue**: Non-blocking in-process goroutine worker channel (`chan EmailJob`) sending HTML notification emails via SMTP (MailHog in dev).
 - 🔍 **PostgreSQL Trigram Search**: `pg_trgm` fuzzy text matching on titles and descriptions with 300ms debounced HTMX search inputs.
-- 🎨 **Apple/Linear-Grade Aesthetic**: Dark slate glassmorphic palette (`#090d16`), Inter typography, custom inline SVG icons, and responsive layouts.
+- 🎨 **Apple/Linear-Grade Aesthetic**: Dark slate glassmorphism palette (`#090d16`), Inter typography, custom inline SVG icons, and responsive layouts.
 
 ---
 
@@ -109,16 +109,19 @@ docker compose up -d --build
 
 ---
 
-## 🔑 Default Login Credentials
+## 🔑 Pre-seeded Test Credentials
 
 > [!IMPORTANT]
-> The database comes pre-seeded with a default administrator account:
+> The application includes the following pre-seeded test accounts for Admin, Support, and Customer roles:
 
-| Email Address | Password | Default Role |
-|:---|:---|:---:|
-| **`admin@ticdesk.com`** | **`password123`** | `Admin` |
+| Name | Email Address | Password | Role | Description |
+|:---|:---|:---:|:---:|:---|
+| **Suvesh** | **`admin@ticdesk.com`** | **`password123`** | `Admin` | System Administrator with full access |
+| **Alex Rivera** | **`alex.support@ticdesk.com`** | **`password123`** | `Support` | Customer Support Agent 1 |
+| **Sarah Chen** | **`sarah.support@ticdesk.com`** | **`password123`** | `Support` | Customer Support Agent 2 |
+| **Test Customer** | **`cust@ticdesk.com`** | **`password123`** | `Customer` | End User / Customer Account |
 
-*You can also register a new account on the `/register` page, which defaults to the `Customer` role.*
+*You can also register additional accounts on the `/register` page.*
 
 ---
 
