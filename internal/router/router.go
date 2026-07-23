@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"ticDesk/internal/auth"
 	"ticDesk/internal/handlers"
+	"ticDesk/internal/models"
 
 	"github.com/alexedwards/scs/v2"
 	"github.com/go-chi/chi/v5"
@@ -17,6 +18,7 @@ func New(
 	ticketHandler *handlers.TicketHandler,
 	commentHandler *handlers.CommentHandler,
 	attachmentHandler *handlers.AttachmentHandler,
+	adminHandler *handlers.AdminHandler,
 ) http.Handler {
 	r := chi.NewRouter()
 
@@ -42,7 +44,7 @@ func New(
 	r.Post("/register", authHandler.ProcessRegister)
 	r.Post("/logout", authHandler.ProcessLogout)
 
-	// Protected Routes
+	// Protected Routes (Requires Authentication)
 	r.Group(func(r chi.Router) {
 		r.Use(auth.RequireAuth)
 
@@ -63,6 +65,15 @@ func New(
 		r.Get("/tickets/{id}/comments", commentHandler.GetComments)
 		r.Post("/tickets/{id}/comments", commentHandler.CreateComment)
 		r.Get("/attachments/{id}", attachmentHandler.DownloadAttachment)
+
+		// Admin-Only Routes (Requires Role: Admin)
+		r.Group(func(r chi.Router) {
+			r.Use(auth.RequireRole(models.RoleAdmin))
+
+			r.Get("/admin/users", adminHandler.ShowUserManagement)
+			r.Post("/admin/users/{id}/role", adminHandler.UpdateUserRole)
+			r.Post("/admin/users/{id}/deactivate", adminHandler.ToggleUserStatus)
+		})
 	})
 
 	return r

@@ -63,3 +63,35 @@ func (r *UserRepository) GetUserByID(ctx context.Context, id string) (*models.Us
 	}
 	return user, nil
 }
+
+func (r *UserRepository) ListUsers(ctx context.Context) ([]models.User, error) {
+	query := `SELECT id, name, email, role, is_active, created_at FROM users ORDER BY created_at DESC`
+	rows, err := r.db.Query(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list users: %w", err)
+	}
+	defer rows.Close()
+
+	var users []models.User
+	for rows.Next() {
+		var u models.User
+		if err := rows.Scan(&u.ID, &u.Name, &u.Email, &u.Role, &u.IsActive, &u.CreatedAt); err != nil {
+			return nil, err
+		}
+		users = append(users, u)
+	}
+	return users, nil
+}
+
+func (r *UserRepository) UpdateUserRole(ctx context.Context, id string, role models.UserRole) error {
+	query := `UPDATE users SET role = $1 WHERE id = $2`
+	_, err := r.db.Exec(ctx, query, role, id)
+	return err
+}
+
+func (r *UserRepository) ToggleUserStatus(ctx context.Context, id string) (bool, error) {
+	query := `UPDATE users SET is_active = NOT is_active WHERE id = $1 RETURNING is_active`
+	var isActive bool
+	err := r.db.QueryRow(ctx, query, id).Scan(&isActive)
+	return isActive, err
+}

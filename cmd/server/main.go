@@ -58,6 +58,7 @@ func main() {
 	ticketHandler := handlers.NewTicketHandler(ticketRepo)
 	commentHandler := handlers.NewCommentHandler(commentRepo, attachmentRepo, ticketRepo, storageService)
 	attachmentHandler := handlers.NewAttachmentHandler(attachmentRepo, ticketRepo)
+	adminHandler := handlers.NewAdminHandler(userRepo)
 
 	// Build Router
 	r := router.New(
@@ -67,6 +68,7 @@ func main() {
 		ticketHandler,
 		commentHandler,
 		attachmentHandler,
+		adminHandler,
 	)
 
 	srv := &http.Server{

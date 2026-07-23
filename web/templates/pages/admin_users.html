@@ -1,0 +1,87 @@
+{{template "base.html" .}}
+
+{{define "title"}}User Management — ticDesk Admin{{end}}
+
+{{define "content"}}
+<div class="w-full max-w-6xl mx-auto py-6 space-y-6">
+
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-semibold uppercase tracking-wider mb-2">
+                <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                <span>Admin Console</span>
+            </div>
+            <h1 class="text-2xl font-bold text-white tracking-tight">User & Role Management</h1>
+            <p class="text-sm text-slate-400 mt-1">Manage user roles, system permissions, and account statuses</p>
+        </div>
+    </div>
+
+    <!-- Users Table Card -->
+    <div class="glass-card rounded-2xl border border-slate-800 overflow-hidden shadow-2xl">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-slate-300">
+                <thead class="bg-slate-900/80 text-xs uppercase tracking-wider text-slate-400 border-b border-slate-800">
+                    <tr>
+                        <th class="py-3.5 px-5">User</th>
+                        <th class="py-3.5 px-5">Email</th>
+                        <th class="py-3.5 px-5">Current Role</th>
+                        <th class="py-3.5 px-5">Change Role</th>
+                        <th class="py-3.5 px-5">Status</th>
+                        <th class="py-3.5 px-5 text-right">Joined Date</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/60">
+                    {{range .Users}}
+                        <tr class="hover:bg-slate-900/50 transition-colors duration-150">
+                            <td class="py-4 px-5 font-medium text-white flex items-center space-x-3">
+                                <div class="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-bold text-slate-300">
+                                    {{slice .Name 0 1}}
+                                </div>
+                                <span>{{.Name}}</span>
+                            </td>
+                            <td class="py-4 px-5 text-slate-400 text-xs font-mono">
+                                {{.Email}}
+                            </td>
+                            <td class="py-4 px-5">
+                                <span class="text-xs uppercase font-semibold tracking-wider px-2.5 py-0.5 rounded-full {{if eq .Role "admin"}}bg-amber-500/10 text-amber-400 border border-amber-500/20{{else if eq .Role "support"}}bg-indigo-500/10 text-indigo-400 border border-indigo-500/20{{else}}bg-slate-800 text-slate-400 border border-slate-700{{end}}">
+                                    {{.Role}}
+                                </span>
+                            </td>
+                            <td class="py-4 px-5">
+                                <form action="/admin/users/{{.ID}}/role" method="POST" class="flex items-center space-x-2">
+                                    <select name="role" class="bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                                        <option value="customer" {{if eq .Role "customer"}}selected{{end}}>Customer</option>
+                                        <option value="support" {{if eq .Role "support"}}selected{{end}}>Support</option>
+                                        <option value="admin" {{if eq .Role "admin"}}selected{{end}}>Admin</option>
+                                    </select>
+                                    <button type="submit" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-200 rounded-lg transition-colors">
+                                        Save
+                                    </button>
+                                </form>
+                            </td>
+                            <td class="py-4 px-5">
+                                <form action="/admin/users/{{.ID}}/deactivate" method="POST">
+                                    {{if .IsActive}}
+                                        <button type="submit" class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-rose-500/20 hover:text-rose-400 hover:border-rose-500/30 transition-all">
+                                            Active (Deactivate)
+                                        </button>
+                                    {{else}}
+                                        <button type="submit" class="px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-emerald-500/20 hover:text-emerald-400 transition-all">
+                                            Disabled (Activate)
+                                        </button>
+                                    {{end}}
+                                </form>
+                            </td>
+                            <td class="py-4 px-5 text-right text-xs text-slate-500">
+                                {{.CreatedAt.Format "Jan 02, 2026"}}
+                            </td>
+                        </tr>
+                    {{end}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{{end}}
