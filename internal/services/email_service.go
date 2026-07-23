@@ -82,51 +82,139 @@ func (s *EmailService) sendSMTP(job EmailJob) error {
 	return smtp.SendMail(addr, nil, s.fromAddr, []string{job.To}, []byte(msg.String()))
 }
 
-// Notification Helpers
+// Outlook-Style Email Helper Templates
+
+func (s *EmailService) buildOutlookWrapper(title, preheader, bodyContent, actionURL, actionText string) string {
+	return fmt.Sprintf(`
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>%s</title>
+    <style>
+        body { font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif; background-color: #f3f2f1; color: #201f1e; margin: 0; padding: 0; }
+        .outlook-container { max-width: 620px; margin: 24px auto; background-color: #ffffff; border-radius: 4px; border: 1px solid #e1dfdd; box-shadow: 0 1.6px 3.6px 0 rgba(0,0,0,0.132), 0 0.3px 0.9px 0 rgba(0,0,0,0.108); overflow: hidden; }
+        .outlook-header { background-color: #0078d4; color: #ffffff; padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; }
+        .outlook-brand { font-size: 18px; font-weight: 700; letter-spacing: -0.2px; }
+        .outlook-sub { font-size: 11px; opacity: 0.85; text-transform: uppercase; letter-spacing: 0.5px; }
+        .outlook-body { padding: 28px 24px; }
+        .outlook-title { font-size: 20px; font-weight: 600; color: #106ebe; margin-top: 0; margin-bottom: 8px; }
+        .outlook-pre { font-size: 13px; color: #605e5c; margin-bottom: 20px; }
+        .outlook-table { width: 100%%; border-collapse: collapse; margin: 16px 0; background-color: #faf9f8; border: 1px solid #edebe9; border-radius: 4px; }
+        .outlook-table td { padding: 10px 14px; font-size: 13px; border-bottom: 1px solid #edebe9; }
+        .outlook-label { font-weight: 600; color: #323130; width: 130px; }
+        .outlook-badge-open { display: inline-block; padding: 2px 8px; background-color: #deecf9; color: #005a9e; font-weight: 600; font-size: 11px; border-radius: 2px; }
+        .outlook-badge-progress { display: inline-block; padding: 2px 8px; background-color: #fff4ce; color: #797775; font-weight: 600; font-size: 11px; border-radius: 2px; }
+        .outlook-badge-resolved { display: inline-block; padding: 2px 8px; background-color: #dff6dd; color: #107c41; font-weight: 600; font-size: 11px; border-radius: 2px; }
+        .outlook-btn { display: inline-block; background-color: #0078d4; color: #ffffff !important; font-size: 13px; font-weight: 600; text-decoration: none; padding: 10px 22px; border-radius: 2px; margin-top: 18px; }
+        .outlook-footer { background-color: #faf9f8; padding: 16px 24px; font-size: 11px; color: #a19f9d; border-top: 1px solid #edebe9; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="outlook-container">
+        <!-- Outlook Brand Bar -->
+        <div class="outlook-header">
+            <div class="outlook-brand">ticDesk Support</div>
+            <div class="outlook-sub">Microsoft Outlook Mail Gateway</div>
+        </div>
+
+        <!-- Email Main Content -->
+        <div class="outlook-body">
+            <h1 class="outlook-title">%s</h1>
+            <p class="outlook-pre">%s</p>
+
+            %s
+
+            <a href="%s" class="outlook-btn">%s</a>
+        </div>
+
+        <!-- Footer -->
+        <div class="outlook-footer">
+            Sent via ticDesk IT Helpdesk • Powered by Microsoft Outlook Email Templates
+        </div>
+    </div>
+</body>
+</html>
+	`, title, title, preheader, bodyContent, actionURL, actionText)
+}
 
 func (s *EmailService) NotifyTicketCreated(ticket *models.Ticket, recipientEmail string) {
-	subject := fmt.Sprintf("[ticDesk] Ticket #%d Created: %s", ticket.TicketNumber, ticket.Title)
-	body := fmt.Sprintf(`
-		<div style="font-family: sans-serif; background-color: #0f172a; color: #f8fafc; padding: 24px; borderRadius: 12px;">
-			<h2 style="color: #6366f1;">Ticket #%d Created</h2>
-			<p>A new support ticket has been submitted on <strong>ticDesk</strong>.</p>
-			<div style="background-color: #1e293b; padding: 16px; border-radius: 8px; margin: 16px 0;">
-				<p><strong>Title:</strong> %s</p>
-				<p><strong>Priority:</strong> %s</p>
-				<p><strong>Status:</strong> %s</p>
-			</div>
-			<p><a href="http://localhost:8081/tickets/%s" style="background-color: #6366f1; color: #ffffff; padding: 10px 20px; text-decoration: none; border-radius: 8px; font-weight: bold;">View Ticket</a></p>
-		</div>
-	`, ticket.TicketNumber, ticket.Title, ticket.Priority, ticket.Status, ticket.ID)
+	subject := fmt.Sprintf("[Outlook Ticket Alert] #%d: %s", ticket.TicketNumber, ticket.Title)
+	preheader := fmt.Sprintf("A new support ticket has been created by %s", recipientEmail)
 
-	s.Enqueue(EmailJob{To: recipientEmail, Subject: subject, HTML: body})
+	bodyTable := fmt.Sprintf(`
+		<table class="outlook-table">
+			<tr>
+				<td class="outlook-label">Ticket Ref #:</td>
+				<td><strong>#%d</strong></td>
+			</tr>
+			<tr>
+				<td class="outlook-label">Subject:</td>
+				<td>%s</td>
+			</tr>
+			<tr>
+				<td class="outlook-label">Priority:</td>
+				<td>%s</td>
+			</tr>
+			<tr>
+				<td class="outlook-label">Status:</td>
+				<td><span class="outlook-badge-open">OPEN</span></td>
+			</tr>
+		</table>
+	`, ticket.TicketNumber, ticket.Title, ticket.Priority)
+
+	actionURL := fmt.Sprintf("http://localhost:8081/tickets/%s", ticket.ID)
+	html := s.buildOutlookWrapper("Ticket Created Successfully", preheader, bodyTable, actionURL, "Open Ticket in Outlook")
+
+	s.Enqueue(EmailJob{To: recipientEmail, Subject: subject, HTML: html})
 }
 
 func (s *EmailService) NotifyStatusChanged(ticket *models.Ticket, oldStatus, newStatus models.TicketStatus, recipientEmail string) {
-	subject := fmt.Sprintf("[ticDesk] Ticket #%d Status Updated: %s -> %s", ticket.TicketNumber, oldStatus, newStatus)
-	body := fmt.Sprintf(`
-		<div style="font-family: sans-serif; background-color: #0f172a; color: #f8fafc; padding: 24px; borderRadius: 12px;">
-			<h2 style="color: #6366f1;">Ticket Status Updated</h2>
-			<p>Ticket <strong>#%d - %s</strong> has changed status from <strong>%s</strong> to <strong style="color: #f59e0b;">%s</strong>.</p>
-			<p><a href="http://localhost:8081/tickets/%s" style="background-color: #6366f1; color: #ffffff; padding: 10px 20px; text-decoration: none; border-radius: 8px; font-weight: bold;">View Details</a></p>
-		</div>
-	`, ticket.TicketNumber, ticket.Title, oldStatus, newStatus, ticket.ID)
+	subject := fmt.Sprintf("[Outlook Status Update] Ticket #%d changed to %s", ticket.TicketNumber, newStatus)
+	preheader := fmt.Sprintf("Ticket #%d status updated from %s to %s", ticket.TicketNumber, oldStatus, newStatus)
 
-	s.Enqueue(EmailJob{To: recipientEmail, Subject: subject, HTML: body})
+	badgeClass := "outlook-badge-progress"
+	if newStatus == models.StatusResolved || newStatus == models.StatusClosed {
+		badgeClass = "outlook-badge-resolved"
+	}
+
+	bodyTable := fmt.Sprintf(`
+		<table class="outlook-table">
+			<tr>
+				<td class="outlook-label">Ticket Ref #:</td>
+				<td><strong>#%d</strong></td>
+			</tr>
+			<tr>
+				<td class="outlook-label">Previous Status:</td>
+				<td>%s</td>
+			</tr>
+			<tr>
+				<td class="outlook-label">New Status:</td>
+				<td><span class="%s">%s</span></td>
+			</tr>
+		</table>
+	`, ticket.TicketNumber, oldStatus, badgeClass, strings.ToUpper(string(newStatus)))
+
+	actionURL := fmt.Sprintf("http://localhost:8081/tickets/%s", ticket.ID)
+	html := s.buildOutlookWrapper("Ticket Status Updated", preheader, bodyTable, actionURL, "View Ticket Status")
+
+	s.Enqueue(EmailJob{To: recipientEmail, Subject: subject, HTML: html})
 }
 
 func (s *EmailService) NotifyNewComment(ticket *models.Ticket, authorName, commentBody string, recipientEmail string) {
-	subject := fmt.Sprintf("[ticDesk] New Reply on Ticket #%d", ticket.TicketNumber)
-	body := fmt.Sprintf(`
-		<div style="font-family: sans-serif; background-color: #0f172a; color: #f8fafc; padding: 24px; borderRadius: 12px;">
-			<h2 style="color: #6366f1;">New Reply Received</h2>
-			<p><strong>%s</strong> commented on ticket <strong>#%d (%s)</strong>:</p>
-			<div style="background-color: #1e293b; padding: 16px; border-radius: 8px; margin: 16px 0; font-style: italic;">
-				"%s"
-			</div>
-			<p><a href="http://localhost:8081/tickets/%s" style="background-color: #6366f1; color: #ffffff; padding: 10px 20px; text-decoration: none; border-radius: 8px; font-weight: bold;">Reply on ticDesk</a></p>
-		</div>
-	`, authorName, ticket.TicketNumber, ticket.Title, commentBody, ticket.ID)
+	subject := fmt.Sprintf("[Outlook Conversation] New Reply on Ticket #%d", ticket.TicketNumber)
+	preheader := fmt.Sprintf("%s replied to ticket #%d", authorName, ticket.TicketNumber)
 
-	s.Enqueue(EmailJob{To: recipientEmail, Subject: subject, HTML: body})
+	bodyTable := fmt.Sprintf(`
+		<div style="background-color: #faf9f8; border-left: 4px solid #0078d4; padding: 14px 16px; margin: 16px 0; border-radius: 2px;">
+			<div style="font-size: 12px; font-weight: 600; color: #323130; margin-bottom: 6px;">From: %s</div>
+			<div style="font-size: 13px; color: #201f1e; line-height: 1.5;">%s</div>
+		</div>
+	`, authorName, commentBody)
+
+	actionURL := fmt.Sprintf("http://localhost:8081/tickets/%s", ticket.ID)
+	html := s.buildOutlookWrapper("New Message Received", preheader, bodyTable, actionURL, "Reply via ticDesk")
+
+	s.Enqueue(EmailJob{To: recipientEmail, Subject: subject, HTML: html})
 }
