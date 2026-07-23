@@ -2,18 +2,13 @@
 
 {{define "content"}}
 <div class="space-y-6" x-data="{ 
-    selectedDate: '',
+    selectedDate: new Date().toISOString().slice(0,10),
     selectedTitle: '',
-    modalOpen: false,
-    openEventModal(dateStr) {
-        this.selectedDate = dateStr;
-        this.selectedTitle = '';
-        this.modalOpen = true;
-    }
+    modalOpen: false
 }">
 
     <!-- Calendar Header: Emerald/Green theme -->
-    <div class="flex items-center justify-between">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div class="flex items-center space-x-3">
             <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-600 to-teal-700 flex items-center justify-center shadow-lg shadow-emerald-900/40 shrink-0">
                 <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -22,7 +17,7 @@
             </div>
             <div>
                 <h1 class="text-lg font-bold text-white tracking-tight leading-none">Interactive Shift & Maintenance Calendar</h1>
-                <p class="text-[11px] text-slate-400 mt-0.5">Click any date cell directly in the calendar to schedule shifts, maintenance windows & SLA deadlines</p>
+                <p class="text-[11px] text-slate-400 mt-0.5">Click any date cell directly on the calendar grid to schedule shifts & maintenance</p>
             </div>
         </div>
         <div class="flex items-center gap-2">
@@ -30,58 +25,62 @@
                 <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                 <span>{{len .Events}} Events Scheduled</span>
             </div>
-            <button @click="openEventModal(new Date().toISOString().slice(0,10))" class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded transition-colors shadow-md shadow-emerald-900/30">
+            <button @click="modalOpen = true;" class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded transition-colors shadow-md shadow-emerald-900/30">
                 + Add Event
             </button>
         </div>
     </div>
 
-    <!-- Main Grid: Interactive Calendar Month Grid + Agenda List -->
+    <!-- Main Grid: Month Calendar Grid + Agenda List -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-        <!-- Left (2 cols): Interactive Calendar Month Grid -->
+        <!-- Left (2 cols): 31-Day Month Calendar Grid -->
         <div class="lg:col-span-2 bg-[#1b1a19] border border-[#292827] rounded-xl p-5 space-y-4 shadow-xl">
+            <!-- Calendar Navigation Header -->
             <div class="flex items-center justify-between pb-3 border-b border-[#292827]">
-                <h2 class="text-sm font-bold text-white flex items-center gap-2">
-                    <span>🗓️ Monthly Overview</span>
-                    <span class="text-xs font-mono text-emerald-400 font-normal">(Click any date cell to schedule)</span>
-                </h2>
-                <div class="flex items-center space-x-3 text-xs">
+                <h2 class="text-base font-extrabold text-white tracking-tight">🗓️ July 2026 Schedule</h2>
+                <div class="flex items-center space-x-3 text-xs hidden sm:flex">
                     <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-400"></span><span class="text-slate-400 text-[10px]">Maintenance</span></span>
                     <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-sky-400"></span><span class="text-slate-400 text-[10px]">Shift</span></span>
-                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-rose-400"></span><span class="text-slate-400 text-[10px]">SLA</span></span>
+                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-rose-400"></span><span class="text-slate-400 text-[10px]">SLA Target</span></span>
                 </div>
             </div>
 
-            <!-- Calendar Days Header -->
-            <div class="grid grid-cols-7 gap-1 text-center text-[10px] font-bold uppercase tracking-wider text-slate-500 py-1">
+            <!-- Day Names Header -->
+            <div class="grid grid-cols-7 gap-1.5 text-center text-[10px] font-bold uppercase tracking-wider text-slate-500 py-1">
                 <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
             </div>
 
-            <!-- Calendar Month Cells (Interactive 35-day grid demo) -->
-            <div class="grid grid-cols-7 gap-1">
-                <!-- Day cells generation for current month view (1 to 31) -->
-                {{range $day := (slice 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31)}}
-                <div @click="openEventModal('2026-07-{{if lt $day 10}}0{{$day}}{{else}}{{$day}}{{end}}')"
-                     class="min-h-[70px] p-1.5 bg-[#252423] hover:bg-[#2d2c2b] border border-[#323130] hover:border-emerald-500/50 rounded-lg cursor-pointer transition-all flex flex-col justify-between group">
+            <!-- 31-Day Month Grid Cells -->
+            <div class="grid grid-cols-7 gap-1.5">
+                <!-- Day cells (1 to 31) -->
+                {{range $day := seq 31}}
+                <div @click="selectedDate = '2026-07-{{if lt $day 10}}0{{$day}}{{else}}{{$day}}{{end}}'; modalOpen = true;"
+                     class="min-h-[75px] p-2 bg-[#252423] hover:bg-[#2d2c2b] border border-[#323130] hover:border-emerald-500/60 rounded-lg cursor-pointer transition-all flex flex-col justify-between group shadow-sm">
                     
                     <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold text-slate-300 group-hover:text-emerald-400">{{$day}}</span>
-                        <span class="text-[9px] opacity-0 group-hover:opacity-100 text-emerald-400 font-bold transition-opacity">+</span>
+                        <span class="text-xs font-extrabold text-white group-hover:text-emerald-400 font-mono">{{$day}}</span>
+                        <span class="text-[10px] opacity-0 group-hover:opacity-100 text-emerald-400 font-extrabold transition-opacity">+</span>
                     </div>
 
-                    <!-- Show indicators for events matching dates -->
+                    <!-- Highlight active day items -->
                     <div class="space-y-1 mt-1">
                         {{if eq $day 24}}
                         <div class="px-1 py-0.5 rounded bg-sky-500/20 text-sky-300 text-[9px] font-bold truncate border border-sky-500/30">
-                            🛡️ On-Call Shift
+                            🛡️ Shift
                         </div>
                         {{end}}
                         {{if eq $day 25}}
                         <div class="px-1 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[9px] font-bold truncate border border-amber-500/30">
-                            🔧 DB Patching
+                            🔧 Maintenance
                         </div>
                         {{end}}
+                    </div>
+
+                    <div class="mt-1 text-center">
+                        <span class="text-[9px] text-slate-500 group-hover:text-emerald-400 font-semibold block transition-colors">
+                            Add event
+                        </span>
                     </div>
                 </div>
                 {{end}}

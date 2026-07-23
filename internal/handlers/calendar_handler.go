@@ -37,6 +37,13 @@ func (h *CalendarHandler) RenderCalendar(w http.ResponseWriter, r *http.Request)
 		"sub": func(a, b int) int { return a - b },
 		"add": func(a, b int) int { return a + b },
 		"mul": func(a, b int) int { return a * b },
+		"seq": func(n int) []int {
+			res := make([]int, n)
+			for i := 0; i < n; i++ {
+				res[i] = i + 1
+			}
+			return res
+		},
 	}).ParseFiles(
 		"web/templates/layouts/base.html",
 		"web/templates/pages/calendar.html",
