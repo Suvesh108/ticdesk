@@ -15,6 +15,8 @@ func New(
 	authHandler *handlers.AuthHandler,
 	dashboardHandler *handlers.DashboardHandler,
 	ticketHandler *handlers.TicketHandler,
+	commentHandler *handlers.CommentHandler,
+	attachmentHandler *handlers.AttachmentHandler,
 ) http.Handler {
 	r := chi.NewRouter()
 
@@ -56,6 +58,11 @@ func New(
 		r.Patch("/tickets/{id}/status", ticketHandler.UpdateStatus)
 		r.Patch("/tickets/{id}/priority", ticketHandler.UpdatePriority)
 		r.Patch("/tickets/{id}/assign", ticketHandler.UpdateAssignee)
+
+		// Comments & Attachments Routes
+		r.Get("/tickets/{id}/comments", commentHandler.GetComments)
+		r.Post("/tickets/{id}/comments", commentHandler.CreateComment)
+		r.Get("/attachments/{id}", attachmentHandler.DownloadAttachment)
 	})
 
 	return r

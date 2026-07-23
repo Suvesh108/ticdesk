@@ -14,6 +14,7 @@ import (
 	"ticDesk/internal/handlers"
 	"ticDesk/internal/repository"
 	"ticDesk/internal/router"
+	"ticDesk/internal/services"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -24,7 +25,6 @@ func main() {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	// Connect to PostgreSQL database pool
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -40,20 +40,34 @@ func main() {
 		log.Println("Successfully connected to PostgreSQL database")
 	}
 
+	// Initialize Services
+	storageService := services.NewLocalStorageService("web/static/uploads")
+
 	// Initialize Session Manager
 	sessionManager := auth.InitSessionManager(cfg.SessionSecret)
 
 	// Initialize Repositories
 	userRepo := repository.NewUserRepository(dbPool)
 	ticketRepo := repository.NewTicketRepository(dbPool)
+	commentRepo := repository.NewCommentRepository(dbPool)
+	attachmentRepo := repository.NewAttachmentRepository(dbPool)
 
 	// Initialize Handlers
 	authHandler := handlers.NewAuthHandler(userRepo)
 	dashboardHandler := handlers.NewDashboardHandler()
 	ticketHandler := handlers.NewTicketHandler(ticketRepo)
+	commentHandler := handlers.NewCommentHandler(commentRepo, attachmentRepo, ticketRepo, storageService)
+	attachmentHandler := handlers.NewAttachmentHandler(attachmentRepo, ticketRepo)
 
 	// Build Router
-	r := router.New(sessionManager, authHandler, dashboardHandler, ticketHandler)
+	r := router.New(
+		sessionManager,
+		authHandler,
+		dashboardHandler,
+		ticketHandler,
+		commentHandler,
+		attachmentHandler,
+	)
 
 	srv := &http.Server{
 		Addr:         ":" + cfg.Port,

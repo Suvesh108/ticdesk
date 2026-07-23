@@ -45,28 +45,52 @@ type Category struct {
 }
 
 type Ticket struct {
-	ID           string         `json:"id"`
-	TicketNumber int            `json:"ticket_number"`
-	Title        string         `json:"title"`
-	Description  string         `json:"description"`
-	CategoryID   *int           `json:"category_id"`
-	CategoryName string         `json:"category_name,omitempty"`
-	Priority     TicketPriority `json:"priority"`
-	Status       TicketStatus   `json:"status"`
-	CreatedByID  string         `json:"created_by_id"`
-	CreatedByName string        `json:"created_by_name,omitempty"`
-	AssignedToID *string        `json:"assigned_to_id,omitempty"`
-	AssignedToName *string      `json:"assigned_to_name,omitempty"`
-	CreatedAt    time.Time      `json:"created_at"`
-	UpdatedAt    time.Time      `json:"updated_at"`
-	ResolvedAt   *time.Time     `json:"resolved_at,omitempty"`
+	ID             string         `json:"id"`
+	TicketNumber   int            `json:"ticket_number"`
+	Title          string         `json:"title"`
+	Description    string         `json:"description"`
+	CategoryID     *int           `json:"category_id"`
+	CategoryName   string         `json:"category_name,omitempty"`
+	Priority       TicketPriority `json:"priority"`
+	Status         TicketStatus   `json:"status"`
+	CreatedByID    string         `json:"created_by_id"`
+	CreatedByName  string         `json:"created_by_name,omitempty"`
+	AssignedToID   *string        `json:"assigned_to_id,omitempty"`
+	AssignedToName *string        `json:"assigned_to_name,omitempty"`
+	CreatedAt      time.Time      `json:"created_at"`
+	UpdatedAt      time.Time      `json:"updated_at"`
+	ResolvedAt     *time.Time     `json:"resolved_at,omitempty"`
 }
 
 type TicketStatusHistory struct {
-	ID        string       `json:"id"`
-	TicketID  string       `json:"ticket_id"`
-	ChangedBy string       `json:"changed_by"`
-	OldStatus *TicketStatus`json:"old_status,omitempty"`
-	NewStatus TicketStatus `json:"new_status"`
-	ChangedAt time.Time    `json:"changed_at"`
+	ID        string        `json:"id"`
+	TicketID  string        `json:"ticket_id"`
+	ChangedBy string        `json:"changed_by"`
+	OldStatus *TicketStatus `json:"old_status,omitempty"`
+	NewStatus TicketStatus  `json:"new_status"`
+	ChangedAt time.Time     `json:"changed_at"`
+}
+
+type Comment struct {
+	ID          string       `json:"id"`
+	TicketID    string       `json:"ticket_id"`
+	AuthorID    string       `json:"author_id"`
+	AuthorName  string       `json:"author_name"`
+	AuthorRole  UserRole     `json:"author_role"`
+	Body        string       `json:"body"`
+	IsInternal  bool         `json:"is_internal"`
+	CreatedAt   time.Time    `json:"created_at"`
+	Attachments []Attachment `json:"attachments,omitempty"`
+}
+
+type Attachment struct {
+	ID         string    `json:"id"`
+	TicketID   *string   `json:"ticket_id,omitempty"`
+	CommentID  *string   `json:"comment_id,omitempty"`
+	UploadedBy string    `json:"uploaded_by"`
+	FileName   string    `json:"file_name"`
+	FilePath   string    `json:"file_path"`
+	FileSize   int64     `json:"file_size"`
+	MimeType   string    `json:"mime_type"`
+	CreatedAt  time.Time `json:"created_at"`
 }

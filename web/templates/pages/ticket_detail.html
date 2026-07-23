@@ -79,8 +79,9 @@
     <!-- Main Content & Sidebar Grid -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        <!-- Ticket Body Card -->
+        <!-- Ticket Body & Comments Thread -->
         <div class="lg:col-span-2 space-y-6">
+            <!-- Ticket Description Card -->
             <div class="glass-card rounded-2xl p-6 border border-slate-800">
                 <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Description</h3>
                 <div class="text-slate-200 text-sm leading-relaxed whitespace-pre-line font-sans">
@@ -88,12 +89,61 @@
                 </div>
             </div>
 
-            <!-- Comments Placeholder (Phase 5) -->
-            <div class="glass-card rounded-2xl p-6 border border-slate-800">
-                <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-4">Discussion & Comments</h3>
-                <div class="text-center py-8 border border-dashed border-slate-800/80 rounded-xl bg-slate-950/40">
-                    <p class="text-xs text-slate-500">Comments & Attachments module ready for Phase 5.</p>
+            <!-- Comments Section -->
+            <div class="glass-card rounded-2xl p-6 border border-slate-800 space-y-6" x-data="{ isInternal: false }">
+                <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400 pb-3 border-b border-slate-800">Discussion & Replies</h3>
+                
+                <!-- Comment Thread Partial Container -->
+                <div hx-get="/tickets/{{.Ticket.ID}}/comments" hx-trigger="load" hx-target="this" hx-swap="outerHTML">
+                    <div class="text-center py-6 text-xs text-slate-500">Loading replies...</div>
                 </div>
+
+                <!-- Add Comment / Reply Form -->
+                <form hx-post="/tickets/{{.Ticket.ID}}/comments" 
+                      hx-target="#comment-thread-{{.Ticket.ID}}" 
+                      hx-swap="outerHTML" 
+                      enctype="multipart/form-data" 
+                      class="pt-4 border-t border-slate-800 space-y-4"
+                      @htmx:after-request="$el.reset(); isInternal = false">
+                    
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <label for="body" class="block text-xs font-semibold uppercase tracking-wider text-slate-400">Add Reply</label>
+                            {{if or (eq .User.Role "admin") (eq .User.Role "support")}}
+                                <label class="inline-flex items-center space-x-2 cursor-pointer">
+                                    <input type="checkbox" name="is_internal" value="true" x-model="isInternal" class="rounded bg-slate-900 border-slate-800 text-amber-500 focus:ring-0">
+                                    <span class="text-xs font-semibold text-amber-400">Internal Note (Staff only)</span>
+                                </label>
+                            {{end}}
+                        </div>
+                        <textarea id="body" name="body" rows="3" required 
+                                  :placeholder="isInternal ? 'Write an internal note visible only to support staff...' : 'Write a public reply to this ticket...'" 
+                                  :class="isInternal ? 'border-amber-500/40 focus:border-amber-500 bg-amber-950/10' : 'border-slate-800 focus:border-indigo-500 bg-slate-900/90'"
+                                  class="w-full px-4 py-3 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-1 transition-all text-sm leading-relaxed"></textarea>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                            <input type="file" name="file" id="file" class="hidden" @change="$dispatch('file-selected', $el.files[0] ? $el.files[0].name : '')">
+                            <label for="file" class="inline-flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs font-medium text-slate-300 hover:text-white hover:border-slate-700 cursor-pointer transition-colors">
+                                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
+                                </svg>
+                                <span>Attach File (max 10MB)</span>
+                            </label>
+                            <span id="file-name-display" class="text-xs text-indigo-400 ml-2 italic"></span>
+                        </div>
+
+                        <button type="submit" 
+                                :class="isInternal ? 'from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 shadow-amber-500/20' : 'from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 shadow-indigo-500/20'"
+                                class="px-5 py-2 bg-gradient-to-r text-white font-semibold rounded-xl shadow-lg transition-all text-xs flex items-center justify-center space-x-1.5 self-end sm:self-auto">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                            </svg>
+                            <span x-text="isInternal ? 'Post Internal Note' : 'Post Reply'"></span>
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
 
