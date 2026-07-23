@@ -6,8 +6,9 @@ bin/
 *.so
 *.dylib
 
-# Environment variables
+# Environment & local temp files
 .env
+cookies.txt
 
 # Uploads
 web/static/uploads/*
