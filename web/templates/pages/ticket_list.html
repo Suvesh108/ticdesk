@@ -3,16 +3,16 @@
 {{define "title"}}Tickets — ticDesk{{end}}
 
 {{define "content"}}
-<div class="w-full max-w-6xl mx-auto py-6 space-y-6">
+<div class="space-y-6">
 
-    <!-- Header & Action Bar -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <!-- Header & Quick Action -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800/80">
         <div>
             <h1 class="text-2xl font-bold text-white tracking-tight">Support Tickets</h1>
-            <p class="text-sm text-slate-400 mt-1">Manage, search, and track customer support tickets</p>
+            <p class="text-xs text-slate-400 mt-1">Search, filter, and track all IT service requests across your organization</p>
         </div>
 
-        <a href="/tickets/new" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-semibold text-xs shadow-lg shadow-indigo-500/20 transition-all flex items-center justify-center space-x-2 self-start sm:self-auto">
+        <a href="/tickets/new" class="px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-semibold text-xs shadow-lg shadow-brand-500/20 transition-all flex items-center justify-center space-x-2 self-start sm:self-auto">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
             </svg>
@@ -20,9 +20,9 @@
         </a>
     </div>
 
-    <!-- Filter & Search Toolbar -->
-    <form id="filter-form" hx-get="/tickets" hx-target="#ticket-table-container" hx-swap="outerHTML" class="glass-card rounded-2xl p-4 border border-slate-800 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        <!-- Debounced Search Input -->
+    <!-- Filter & Search Bar -->
+    <form id="filter-form" hx-get="/tickets" hx-target="#ticket-table-container" hx-swap="outerHTML" class="ui-card p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <!-- Debounced Search Box -->
         <div class="relative">
             <input type="text" name="search" placeholder="Search title or description..."
                    hx-trigger="keyup changed delay:300ms, search"
@@ -30,7 +30,7 @@
                    hx-target="#ticket-table-container"
                    hx-swap="outerHTML"
                    hx-include="#filter-form"
-                   class="w-full pl-9 pr-4 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors">
+                   class="w-full pl-9 pr-4 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 transition-colors">
             <svg class="w-4 h-4 text-slate-500 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
             </svg>
@@ -39,7 +39,7 @@
         <!-- Status Filter -->
         <select name="status" @change="$dispatch('submit')"
                 hx-get="/tickets" hx-target="#ticket-table-container" hx-swap="outerHTML" hx-include="#filter-form"
-                class="px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-300 focus:outline-none focus:border-indigo-500 transition-colors">
+                class="px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-300 focus:outline-none focus:border-brand-500 transition-colors">
             <option value="">All Statuses</option>
             <option value="open">Open</option>
             <option value="in_progress">In Progress</option>
@@ -50,7 +50,7 @@
         <!-- Priority Filter -->
         <select name="priority" @change="$dispatch('submit')"
                 hx-get="/tickets" hx-target="#ticket-table-container" hx-swap="outerHTML" hx-include="#filter-form"
-                class="px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-300 focus:outline-none focus:border-indigo-500 transition-colors">
+                class="px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-300 focus:outline-none focus:border-brand-500 transition-colors">
             <option value="">All Priorities</option>
             <option value="low">Low Priority</option>
             <option value="medium">Medium Priority</option>
@@ -60,7 +60,7 @@
         <!-- Category Filter -->
         <select name="category_id" @change="$dispatch('submit')"
                 hx-get="/tickets" hx-target="#ticket-table-container" hx-swap="outerHTML" hx-include="#filter-form"
-                class="px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-300 focus:outline-none focus:border-indigo-500 transition-colors">
+                class="px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-300 focus:outline-none focus:border-brand-500 transition-colors">
             <option value="">All Categories</option>
             {{range .Categories}}
                 <option value="{{.ID}}">{{.Name}}</option>
@@ -68,7 +68,7 @@
         </select>
     </form>
 
-    <!-- Dynamic Ticket Table Container -->
+    <!-- Ticket Table Container -->
     {{template "ticket_table.html" .}}
 
 </div>

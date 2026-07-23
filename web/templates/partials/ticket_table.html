@@ -1,70 +1,70 @@
 <div id="ticket-table-container">
-    <div class="glass-card rounded-2xl border border-slate-800 overflow-hidden shadow-2xl">
+    <div class="ui-card overflow-hidden">
         <div class="overflow-x-auto">
-            <table class="w-full text-left text-sm text-slate-300">
-                <thead class="bg-slate-900/80 text-xs uppercase tracking-wider text-slate-400 border-b border-slate-800">
+            <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-slate-900/90 text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-800">
                     <tr>
-                        <th class="py-3.5 px-5">Ref</th>
-                        <th class="py-3.5 px-5">Subject</th>
-                        <th class="py-3.5 px-5">Category</th>
-                        <th class="py-3.5 px-5">Priority</th>
-                        <th class="py-3.5 px-5">Status</th>
-                        <th class="py-3.5 px-5">Requester</th>
-                        <th class="py-3.5 px-5">Assignee</th>
-                        <th class="py-3.5 px-5 text-right">Created</th>
+                        <th class="py-3.5 px-4 font-semibold">Ref #</th>
+                        <th class="py-3.5 px-4 font-semibold">Subject</th>
+                        <th class="py-3.5 px-4 font-semibold">Category</th>
+                        <th class="py-3.5 px-4 font-semibold">Priority</th>
+                        <th class="py-3.5 px-4 font-semibold">Status</th>
+                        <th class="py-3.5 px-4 font-semibold">Requester</th>
+                        <th class="py-3.5 px-4 font-semibold">Assignee</th>
+                        <th class="py-3.5 px-4 font-semibold text-right">Created</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-800/60">
                     {{if .Tickets}}
                         {{range .Tickets}}
                             <tr class="hover:bg-slate-900/50 transition-colors duration-150 group">
-                                <td class="py-4 px-5 font-mono text-xs font-bold text-indigo-400">
+                                <td class="py-3.5 px-4 font-mono font-bold text-brand-400">
                                     #{{.TicketNumber}}
                                 </td>
-                                <td class="py-4 px-5 font-medium text-white max-w-xs truncate">
-                                    <a href="/tickets/{{.ID}}" class="hover:text-indigo-400 transition-colors">
+                                <td class="py-3.5 px-4 font-medium text-white max-w-xs truncate">
+                                    <a href="/tickets/{{.ID}}" class="hover:text-brand-400 transition-colors">
                                         {{.Title}}
                                     </a>
                                 </td>
-                                <td class="py-4 px-5 text-slate-400 text-xs">
-                                    <span class="px-2.5 py-1 rounded-md bg-slate-900 border border-slate-800 font-medium">
+                                <td class="py-3.5 px-4 text-slate-400">
+                                    <span class="px-2 py-0.5 rounded-md bg-slate-900 border border-slate-800 text-[11px]">
                                         {{.CategoryName}}
                                     </span>
                                 </td>
-                                <td class="py-4 px-5">
+                                <td class="py-3.5 px-4">
                                     {{if eq .Priority "high"}}
-                                        <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20">High</span>
+                                        <span class="px-2.5 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wider bg-rose-500/10 text-rose-400 border border-rose-500/20">High</span>
                                     {{else if eq .Priority "medium"}}
-                                        <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">Medium</span>
+                                        <span class="px-2.5 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/20">Medium</span>
                                     {{else}}
-                                        <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-800 text-slate-400 border border-slate-700">Low</span>
+                                        <span class="px-2.5 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wider bg-slate-800 text-slate-400 border border-slate-700">Low</span>
                                     {{end}}
                                 </td>
-                                <td class="py-4 px-5">
+                                <td class="py-3.5 px-4">
                                     {{if eq .Status "open"}}
-                                        <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20">Open</span>
+                                        <span class="px-2.5 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wider bg-blue-500/10 text-blue-400 border border-blue-500/20">Open</span>
                                     {{else if eq .Status "in_progress"}}
-                                        <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">In Progress</span>
+                                        <span class="px-2.5 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/20">In Progress</span>
                                     {{else if eq .Status "resolved"}}
-                                        <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Resolved</span>
+                                        <span class="px-2.5 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Resolved</span>
                                     {{else}}
-                                        <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-800 text-slate-400 border border-slate-700">Closed</span>
+                                        <span class="px-2.5 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wider bg-slate-800 text-slate-400 border border-slate-700">Closed</span>
                                     {{end}}
                                 </td>
-                                <td class="py-4 px-5 text-slate-300 text-xs">
+                                <td class="py-3.5 px-4 text-slate-300">
                                     {{.CreatedByName}}
                                 </td>
-                                <td class="py-4 px-5 text-slate-400 text-xs">
+                                <td class="py-3.5 px-4 text-slate-400">
                                     {{if .AssignedToName}}{{.AssignedToName}}{{else}}<span class="text-slate-600 italic">Unassigned</span>{{end}}
                                 </td>
-                                <td class="py-4 px-5 text-right text-xs text-slate-500 font-mono">
+                                <td class="py-3.5 px-4 text-right text-slate-500 font-mono text-[11px]">
                                     {{.CreatedAt.Format "Jan 02, 15:04"}}
                                 </td>
                             </tr>
                         {{end}}
                     {{else}}
                         <tr>
-                            <td colspan="8" class="text-center py-12 text-slate-500 text-xs">
+                            <td colspan="8" class="text-center py-10 text-slate-500 text-xs">
                                 No tickets match your search filters.
                             </td>
                         </tr>
@@ -73,9 +73,9 @@
             </table>
         </div>
 
-        <!-- Pagination Controls -->
-        <div class="px-6 py-4 bg-slate-900/60 border-t border-slate-800 flex items-center justify-between">
-            <span class="text-xs text-slate-400">
+        <!-- Pagination Bar -->
+        <div class="px-5 py-3.5 bg-slate-900/60 border-t border-slate-800 flex items-center justify-between">
+            <span class="text-[11px] text-slate-400">
                 Showing <strong class="text-white font-mono">{{len .Tickets}}</strong> of <strong class="text-white font-mono">{{.TotalCount}}</strong> tickets
             </span>
 
@@ -85,12 +85,12 @@
                             hx-target="#ticket-table-container"
                             hx-swap="outerHTML"
                             hx-include="#filter-form"
-                            class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs font-medium text-slate-300 hover:text-white transition-colors">
-                        ← Previous
+                            class="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-xs font-medium text-slate-300 hover:text-white transition-colors">
+                        ← Prev
                     </button>
                 {{end}}
 
-                <span class="px-3 py-1.5 rounded-lg bg-slate-800 text-xs font-semibold text-indigo-400">
+                <span class="px-2.5 py-1 rounded-lg bg-slate-800 text-xs font-semibold text-brand-400">
                     Page {{.Page}}
                 </span>
 
@@ -99,7 +99,7 @@
                             hx-target="#ticket-table-container"
                             hx-swap="outerHTML"
                             hx-include="#filter-form"
-                            class="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs font-medium text-slate-300 hover:text-white transition-colors">
+                            class="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-xs font-medium text-slate-300 hover:text-white transition-colors">
                         Next →
                     </button>
                 {{end}}

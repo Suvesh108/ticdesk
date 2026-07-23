@@ -3,29 +3,29 @@
 {{define "title"}}Ticket #{{.Ticket.TicketNumber}} — ticDesk{{end}}
 
 {{define "content"}}
-<div class="w-full max-w-5xl mx-auto py-6 space-y-6">
+<div class="space-y-6">
 
-    <!-- Header Navigation Bar -->
-    <div class="flex items-center justify-between">
+    <!-- Top Navigation Header -->
+    <div class="flex items-center justify-between pb-4 border-b border-slate-800/80">
         <div class="flex items-center space-x-3">
             <a href="/tickets" class="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-colors">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                 </svg>
             </a>
             <div>
                 <div class="flex items-center space-x-2">
-                    <span class="font-mono text-sm font-bold text-indigo-400">#{{.Ticket.TicketNumber}}</span>
-                    <span class="text-xs px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 font-medium">
+                    <span class="font-mono text-xs font-bold text-brand-400">#{{.Ticket.TicketNumber}}</span>
+                    <span class="text-[11px] px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 border border-slate-700">
                         {{.Ticket.CategoryName}}
                     </span>
                 </div>
-                <h1 class="text-2xl font-bold text-white tracking-tight mt-1">{{.Ticket.Title}}</h1>
+                <h1 class="text-xl font-bold text-white tracking-tight mt-0.5">{{.Ticket.Title}}</h1>
             </div>
         </div>
 
-        <div class="flex items-center space-x-3">
-            <!-- HTMX Status Partial Badge -->
+        <!-- Inline Status & Priority Mutators -->
+        <div class="flex items-center space-x-2">
             <div id="ticket-status-{{.Ticket.ID}}" class="inline-flex items-center">
                 {{if or (eq .User.Role "admin") (eq .User.Role "support")}}
                     <select name="status"
@@ -39,19 +39,12 @@
                         <option value="closed" {{if eq .Ticket.Status "closed"}}selected{{end}} class="bg-slate-900 text-slate-400">Closed</option>
                     </select>
                 {{else}}
-                    {{if eq .Ticket.Status "open"}}
-                        <span class="px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20">Open</span>
-                    {{else if eq .Ticket.Status "in_progress"}}
-                        <span class="px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">In Progress</span>
-                    {{else if eq .Ticket.Status "resolved"}}
-                        <span class="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Resolved</span>
-                    {{else}}
-                        <span class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-800 text-slate-400 border border-slate-700">Closed</span>
-                    {{end}}
+                    <span class="px-3 py-1 rounded-full text-xs font-semibold {{if eq .Ticket.Status "open"}}bg-blue-500/10 text-blue-400 border border-blue-500/20{{else if eq .Ticket.Status "in_progress"}}bg-amber-500/10 text-amber-400 border border-amber-500/20{{else}}bg-emerald-500/10 text-emerald-400 border border-emerald-500/20{{end}}">
+                        {{.Ticket.Status}}
+                    </span>
                 {{end}}
             </div>
 
-            <!-- HTMX Priority Partial Badge -->
             <div id="ticket-priority-{{.Ticket.ID}}" class="inline-flex items-center">
                 {{if or (eq .User.Role "admin") (eq .User.Role "support")}}
                     <select name="priority"
@@ -64,13 +57,9 @@
                         <option value="high" {{if eq .Ticket.Priority "high"}}selected{{end}} class="bg-slate-900 text-rose-400">High Priority</option>
                     </select>
                 {{else}}
-                    {{if eq .Ticket.Priority "high"}}
-                        <span class="px-3 py-1 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20">High Priority</span>
-                    {{else if eq .Ticket.Priority "medium"}}
-                        <span class="px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">Medium Priority</span>
-                    {{else}}
-                        <span class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-800 text-slate-400 border border-slate-700">Low Priority</span>
-                    {{end}}
+                    <span class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-800 text-slate-400 border border-slate-700">
+                        {{.Ticket.Priority}}
+                    </span>
                 {{end}}
             </div>
         </div>
@@ -79,65 +68,65 @@
     <!-- Main Content & Sidebar Grid -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        <!-- Ticket Body & Comments Thread -->
+        <!-- Left 2 Columns: Description & Discussion -->
         <div class="lg:col-span-2 space-y-6">
-            <!-- Ticket Description Card -->
-            <div class="glass-card rounded-2xl p-6 border border-slate-800">
-                <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Description</h3>
-                <div class="text-slate-200 text-sm leading-relaxed whitespace-pre-line font-sans">
+            
+            <!-- Description Card -->
+            <div class="ui-card p-6">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Issue Description</h3>
+                <div class="text-slate-200 text-xs leading-relaxed whitespace-pre-line">
                     {{.Ticket.Description}}
                 </div>
             </div>
 
-            <!-- Comments Section -->
-            <div class="glass-card rounded-2xl p-6 border border-slate-800 space-y-6" x-data="{ isInternal: false }">
-                <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400 pb-3 border-b border-slate-800">Discussion & Replies</h3>
+            <!-- Threaded Discussion Section -->
+            <div class="ui-card p-6 space-y-5" x-data="{ isInternal: false }">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 pb-3 border-b border-slate-800">Discussion Thread</h3>
                 
-                <!-- Comment Thread Partial Container -->
+                <!-- Comment List Partial -->
                 <div hx-get="/tickets/{{.Ticket.ID}}/comments" hx-trigger="load" hx-target="this" hx-swap="outerHTML">
-                    <div class="text-center py-6 text-xs text-slate-500">Loading replies...</div>
+                    <div class="text-center py-6 text-xs text-slate-500">Loading discussion...</div>
                 </div>
 
-                <!-- Add Comment / Reply Form -->
+                <!-- Post Reply Form -->
                 <form hx-post="/tickets/{{.Ticket.ID}}/comments" 
                       hx-target="#comment-thread-{{.Ticket.ID}}" 
                       hx-swap="outerHTML" 
                       enctype="multipart/form-data" 
-                      class="pt-4 border-t border-slate-800 space-y-4"
+                      class="pt-4 border-t border-slate-800 space-y-3"
                       @htmx:after-request="$el.reset(); isInternal = false">
                     
                     <div>
                         <div class="flex items-center justify-between mb-2">
-                            <label for="body" class="block text-xs font-semibold uppercase tracking-wider text-slate-400">Add Reply</label>
+                            <label for="body" class="block text-xs font-semibold uppercase tracking-wider text-slate-400">Post Response</label>
                             {{if or (eq .User.Role "admin") (eq .User.Role "support")}}
                                 <label class="inline-flex items-center space-x-2 cursor-pointer">
                                     <input type="checkbox" name="is_internal" value="true" x-model="isInternal" class="rounded bg-slate-900 border-slate-800 text-amber-500 focus:ring-0">
-                                    <span class="text-xs font-semibold text-amber-400">Internal Note (Staff only)</span>
+                                    <span class="text-xs font-semibold text-amber-400">Staff Internal Note</span>
                                 </label>
                             {{end}}
                         </div>
                         <textarea id="body" name="body" rows="3" required 
-                                  :placeholder="isInternal ? 'Write an internal note visible only to support staff...' : 'Write a public reply to this ticket...'" 
-                                  :class="isInternal ? 'border-amber-500/40 focus:border-amber-500 bg-amber-950/10' : 'border-slate-800 focus:border-indigo-500 bg-slate-900/90'"
-                                  class="w-full px-4 py-3 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-1 transition-all text-sm leading-relaxed"></textarea>
+                                  :placeholder="isInternal ? 'Write an internal note visible only to staff...' : 'Write a public reply to this ticket...'" 
+                                  :class="isInternal ? 'border-amber-500/40 focus:border-amber-500 bg-amber-950/10' : 'border-slate-800 focus:border-brand-500 bg-slate-900'"
+                                  class="w-full px-3.5 py-2.5 rounded-xl text-white placeholder-slate-500 focus:outline-none transition-all text-xs leading-relaxed"></textarea>
                     </div>
 
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div class="flex items-center justify-between">
                         <div>
-                            <input type="file" name="file" id="file" class="hidden" @change="$dispatch('file-selected', $el.files[0] ? $el.files[0].name : '')">
+                            <input type="file" name="file" id="file" class="hidden">
                             <label for="file" class="inline-flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs font-medium text-slate-300 hover:text-white hover:border-slate-700 cursor-pointer transition-colors">
-                                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path>
                                 </svg>
-                                <span>Attach File (max 10MB)</span>
+                                <span>Attach File (10MB)</span>
                             </label>
-                            <span id="file-name-display" class="text-xs text-indigo-400 ml-2 italic"></span>
                         </div>
 
                         <button type="submit" 
-                                :class="isInternal ? 'from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 shadow-amber-500/20' : 'from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 shadow-indigo-500/20'"
-                                class="px-5 py-2 bg-gradient-to-r text-white font-semibold rounded-xl shadow-lg transition-all text-xs flex items-center justify-center space-x-1.5 self-end sm:self-auto">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                :class="isInternal ? 'bg-amber-600 hover:bg-amber-500' : 'bg-brand-600 hover:bg-brand-500'"
+                                class="px-4 py-2 text-white font-semibold rounded-xl text-xs flex items-center space-x-1.5 transition-colors">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
                             </svg>
                             <span x-text="isInternal ? 'Post Internal Note' : 'Post Reply'"></span>
@@ -147,25 +136,25 @@
             </div>
         </div>
 
-        <!-- Sidebar Metadata -->
-        <div class="space-y-6">
-            <div class="glass-card rounded-2xl p-6 border border-slate-800 space-y-4">
-                <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400 pb-3 border-b border-slate-800">Ticket Details</h3>
+        <!-- Right 1 Column: Metadata Panel -->
+        <div class="space-y-5">
+            <div class="ui-card p-5 space-y-4">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 pb-2 border-b border-slate-800">Ticket Details</h3>
 
                 <div>
-                    <span class="text-xs text-slate-500 block mb-1">Created By</span>
-                    <span class="text-sm font-medium text-slate-200">{{.Ticket.CreatedByName}}</span>
+                    <span class="text-[11px] text-slate-500 block mb-1">Requester</span>
+                    <span class="text-xs font-semibold text-slate-200">{{.Ticket.CreatedByName}}</span>
                 </div>
 
                 <div>
-                    <span class="text-xs text-slate-500 block mb-1">Assigned Agent</span>
+                    <span class="text-[11px] text-slate-500 block mb-1">Assigned Agent</span>
                     <div id="ticket-assignee-{{.Ticket.ID}}">
                         {{if or (eq .User.Role "admin") (eq .User.Role "support")}}
                             <select name="assigned_to"
                                     hx-patch="/tickets/{{.Ticket.ID}}/assign"
                                     hx-target="#ticket-assignee-{{.Ticket.ID}}"
                                     hx-swap="outerHTML"
-                                    class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs font-medium text-slate-200 focus:outline-none focus:border-indigo-500 transition-all">
+                                    class="w-full px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-xl text-xs font-medium text-slate-200 focus:outline-none focus:border-brand-500 transition-all">
                                 <option value="" {{if not .Ticket.AssignedToID}}selected{{end}}>-- Unassigned --</option>
                                 {{range .Agents}}
                                     <option value="{{.ID}}" {{if eq $.Ticket.AssignedToID .ID}}selected{{end}}>
@@ -174,7 +163,7 @@
                                 {{end}}
                             </select>
                         {{else}}
-                            <span class="text-sm font-medium text-slate-200">
+                            <span class="text-xs font-medium text-slate-200">
                                 {{if .Ticket.AssignedToName}}{{.Ticket.AssignedToName}}{{else}}<span class="text-slate-600 italic">Unassigned</span>{{end}}
                             </span>
                         {{end}}
@@ -182,13 +171,13 @@
                 </div>
 
                 <div>
-                    <span class="text-xs text-slate-500 block">Created At</span>
-                    <span class="text-sm text-slate-300">{{.Ticket.CreatedAt.Format "Jan 02, 2026 15:04 MST"}}</span>
+                    <span class="text-[11px] text-slate-500 block">Created Date</span>
+                    <span class="text-xs text-slate-300">{{.Ticket.CreatedAt.Format "Jan 02, 2026 15:04"}}</span>
                 </div>
 
                 <div>
-                    <span class="text-xs text-slate-500 block">Last Updated</span>
-                    <span class="text-sm text-slate-300">{{.Ticket.UpdatedAt.Format "Jan 02, 2026 15:04 MST"}}</span>
+                    <span class="text-[11px] text-slate-500 block">Last Activity</span>
+                    <span class="text-xs text-slate-300">{{.Ticket.UpdatedAt.Format "Jan 02, 2026 15:04"}}</span>
                 </div>
             </div>
         </div>
