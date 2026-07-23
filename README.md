@@ -1,13 +1,13 @@
 # ticDesk — IT Helpdesk & Ticketing System
 
 ![Go](https://img.shields.io/badge/Go-1.22-00ADD8?style=flat&logo=go)
-![HTMX](https://img.shields.io/badge/HTMX-1.9-3366CC?style=flat)
+![HTMX](https://img.shields.io/badge/HTMX-2.0-3366CC?style=flat)
 ![Alpine.js](https://img.shields.io/badge/Alpine.js-3.x-8BC0D0?style=flat&logo=alpine.js)
 ![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-3.x-38B2AC?style=flat&logo=tailwind-css)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=flat&logo=postgresql)
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=flat&logo=docker)
 
-**ticDesk** is a high-performance, server-rendered IT Helpdesk & Ticket Management System built with **Go**, **HTMX**, **Alpine.js**, **Tailwind CSS**, and **PostgreSQL**. Designed as a modern alternative to legacy admin portals, it leverages an HTML-first architecture with zero-reload HTMX partial swaps, double-barrier RBAC security, and real-time aggregate analytics.
+**ticDesk** is a high-performance, server-rendered IT Helpdesk & Ticket Management System built with **Go**, **HTMX v2**, **Alpine.js**, **Tailwind CSS**, and **PostgreSQL**. Designed as a modern alternative to legacy admin portals, it leverages an HTML-first architecture with zero-reload HTMX partial swaps, double-barrier RBAC security, and real-time aggregate analytics.
 
 ---
 
@@ -18,7 +18,7 @@
   - **Admin**: Full system access, User & Role Management (`/admin/users`), org-wide dashboard, ticket deletion.
   - **Support**: Queue management, team reassignment, status/priority changes, staff-only internal notes.
   - **Customer**: Ticket creation, view/comment on own tickets only, file attachments.
-- ⚡ **Zero-Reload HTMX Partial Swaps**: Instant mutations for ticket status, priority levels, and support agent assignment returning pure HTML fragments.
+- ⚡ **Zero-Reload HTMX v2 Partial Swaps**: Instant mutations for ticket status, priority levels, and support agent assignment returning pure HTML fragments.
 - 💬 **Threaded Discussion & Internal Notes**: Public comment threads for customer communication + staff-only internal notes (`is_internal = true`) hidden from customer accounts.
 - 📎 **Secure File Attachment Storage**: 10MB file upload validation, MIME whitelist, and disk storage abstraction (`storage_service.go`).
 - 📊 **Real-time Analytics & Stats JSON**: Live PostgreSQL aggregate queries for status counts, priority distributions, SLA resolution averages, and agent workload queues.
@@ -33,7 +33,7 @@
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                        Browser                              │
-│  HTMX (swaps HTML fragments) + Alpine.js (local UI state)   │
+│  HTMX v2 (swaps HTML fragments) + Alpine.js (local state)   │
 │  Tailwind CSS (compiled static styling)                    │
 └───────────────────────────┬─────────────────────────────────┘
                             │ HTTP (HTML fragments + full pages)
