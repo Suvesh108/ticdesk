@@ -38,6 +38,18 @@ func renderTicketPage(w http.ResponseWriter, page string, data interface{}) {
 	}
 }
 
+func renderPartial(w http.ResponseWriter, partial string, data interface{}) {
+	tmpl, err := template.ParseFiles("web/templates/partials/" + partial)
+	if err != nil {
+		http.Error(w, "Partial Error: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if err := tmpl.Execute(w, data); err != nil {
+		http.Error(w, "Render Partial Error: "+err.Error(), http.StatusInternalServerError)
+	}
+}
+
 type TicketListData struct {
 	User    *models.User
 	Tickets []models.Ticket
@@ -52,6 +64,7 @@ type TicketNewData struct {
 type TicketDetailData struct {
 	User   *models.User
 	Ticket *models.Ticket
+	Agents []models.User
 }
 
 func (h *TicketHandler) ShowTicketList(w http.ResponseWriter, r *http.Request) {
@@ -135,15 +148,115 @@ func (h *TicketHandler) ShowTicketDetail(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	// RBAC check: Customer can only view own tickets
 	if user.Role == models.RoleCustomer && ticket.CreatedByID != user.ID {
 		http.Error(w, "Forbidden: you cannot access this ticket", http.StatusForbidden)
 		return
 	}
 
+	agents, _ := h.ticketRepo.GetSupportAgents(r.Context())
+
 	data := TicketDetailData{
 		User:   user,
 		Ticket: ticket,
+		Agents: agents,
 	}
 	renderTicketPage(w, "ticket_detail.html", data)
+}
+
+// HTMX Partial Update: Status
+func (h *TicketHandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
+	user := auth.GetUserFromContext(r.Context())
+	ticketID := chi.URLParam(r, "id")
+
+	if user.Role != models.RoleAdmin && user.Role != models.RoleSupport {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
+	_ = r.ParseForm()
+	statusStr := r.FormValue("status")
+	if statusStr == "" {
+		statusStr = r.URL.Query().Get("status")
+	}
+
+	if statusStr == "" {
+		http.Error(w, "Status parameter required", http.StatusBadRequest)
+		return
+	}
+
+	newStatus := models.TicketStatus(statusStr)
+
+	updatedTicket, err := h.ticketRepo.UpdateTicketStatus(r.Context(), ticketID, newStatus, user.ID)
+	if err != nil {
+		http.Error(w, "Failed to update status: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	data := TicketDetailData{User: user, Ticket: updatedTicket}
+	renderPartial(w, "ticket_status_badge.html", data)
+}
+
+// HTMX Partial Update: Priority
+func (h *TicketHandler) UpdatePriority(w http.ResponseWriter, r *http.Request) {
+	user := auth.GetUserFromContext(r.Context())
+	ticketID := chi.URLParam(r, "id")
+
+	if user.Role != models.RoleAdmin && user.Role != models.RoleSupport {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
+	_ = r.ParseForm()
+	priorityStr := r.FormValue("priority")
+	if priorityStr == "" {
+		priorityStr = r.URL.Query().Get("priority")
+	}
+
+	if priorityStr == "" {
+		http.Error(w, "Priority parameter required", http.StatusBadRequest)
+		return
+	}
+
+	newPriority := models.TicketPriority(priorityStr)
+
+	updatedTicket, err := h.ticketRepo.UpdateTicketPriority(r.Context(), ticketID, newPriority)
+	if err != nil {
+		http.Error(w, "Failed to update priority: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	data := TicketDetailData{User: user, Ticket: updatedTicket}
+	renderPartial(w, "ticket_priority_badge.html", data)
+}
+
+// HTMX Partial Update: Assignee
+func (h *TicketHandler) UpdateAssignee(w http.ResponseWriter, r *http.Request) {
+	user := auth.GetUserFromContext(r.Context())
+	ticketID := chi.URLParam(r, "id")
+
+	if user.Role != models.RoleAdmin && user.Role != models.RoleSupport {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
+	_ = r.ParseForm()
+	assigneeIDStr := r.FormValue("assigned_to")
+	if assigneeIDStr == "" {
+		assigneeIDStr = r.URL.Query().Get("assigned_to")
+	}
+
+	var assigneeID *string
+	if assigneeIDStr != "" {
+		assigneeID = &assigneeIDStr
+	}
+
+	updatedTicket, err := h.ticketRepo.UpdateTicketAssignee(r.Context(), ticketID, assigneeID)
+	if err != nil {
+		http.Error(w, "Failed to update assignee: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	agents, _ := h.ticketRepo.GetSupportAgents(r.Context())
+	data := TicketDetailData{User: user, Ticket: updatedTicket, Agents: agents}
+	renderPartial(w, "ticket_assignee.html", data)
 }

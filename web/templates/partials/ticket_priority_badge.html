@@ -1,0 +1,21 @@
+<div id="ticket-priority-{{.Ticket.ID}}" class="inline-flex items-center">
+    {{if or (eq .User.Role "admin") (eq .User.Role "support")}}
+        <select name="priority"
+                hx-patch="/tickets/{{.Ticket.ID}}/priority"
+                hx-target="#ticket-priority-{{.Ticket.ID}}"
+                hx-swap="outerHTML"
+                class="text-xs font-semibold px-3 py-1 rounded-full cursor-pointer focus:outline-none transition-all border {{if eq .Ticket.Priority "high"}}bg-rose-500/10 text-rose-400 border-rose-500/30{{else if eq .Ticket.Priority "medium"}}bg-amber-500/10 text-amber-400 border-amber-500/30{{else}}bg-slate-800 text-slate-400 border-slate-700{{end}}">
+            <option value="low" {{if eq .Ticket.Priority "low"}}selected{{end}} class="bg-slate-900 text-slate-400">Low Priority</option>
+            <option value="medium" {{if eq .Ticket.Priority "medium"}}selected{{end}} class="bg-slate-900 text-amber-400">Medium Priority</option>
+            <option value="high" {{if eq .Ticket.Priority "high"}}selected{{end}} class="bg-slate-900 text-rose-400">High Priority</option>
+        </select>
+    {{else}}
+        {{if eq .Ticket.Priority "high"}}
+            <span class="px-3 py-1 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20">High Priority</span>
+        {{else if eq .Ticket.Priority "medium"}}
+            <span class="px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">Medium Priority</span>
+        {{else}}
+            <span class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-800 text-slate-400 border border-slate-700">Low Priority</span>
+        {{end}}
+    {{end}}
+</div>

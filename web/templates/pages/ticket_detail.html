@@ -25,25 +25,54 @@
         </div>
 
         <div class="flex items-center space-x-3">
-            <!-- Status Badge -->
-            {{if eq .Ticket.Status "open"}}
-                <span class="px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20">Open</span>
-            {{else if eq .Ticket.Status "in_progress"}}
-                <span class="px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">In Progress</span>
-            {{else if eq .Ticket.Status "resolved"}}
-                <span class="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Resolved</span>
-            {{else}}
-                <span class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-800 text-slate-400 border border-slate-700">Closed</span>
-            {{end}}
+            <!-- HTMX Status Partial Badge -->
+            <div id="ticket-status-{{.Ticket.ID}}" class="inline-flex items-center">
+                {{if or (eq .User.Role "admin") (eq .User.Role "support")}}
+                    <select name="status"
+                            hx-patch="/tickets/{{.Ticket.ID}}/status"
+                            hx-target="#ticket-status-{{.Ticket.ID}}"
+                            hx-swap="outerHTML"
+                            class="text-xs font-semibold px-3 py-1.5 rounded-full cursor-pointer focus:outline-none transition-all border {{if eq .Ticket.Status "open"}}bg-blue-500/10 text-blue-400 border-blue-500/30{{else if eq .Ticket.Status "in_progress"}}bg-amber-500/10 text-amber-400 border-amber-500/30{{else if eq .Ticket.Status "resolved"}}bg-emerald-500/10 text-emerald-400 border-emerald-500/30{{else}}bg-slate-800 text-slate-400 border-slate-700{{end}}">
+                        <option value="open" {{if eq .Ticket.Status "open"}}selected{{end}} class="bg-slate-900 text-blue-400">Open</option>
+                        <option value="in_progress" {{if eq .Ticket.Status "in_progress"}}selected{{end}} class="bg-slate-900 text-amber-400">In Progress</option>
+                        <option value="resolved" {{if eq .Ticket.Status "resolved"}}selected{{end}} class="bg-slate-900 text-emerald-400">Resolved</option>
+                        <option value="closed" {{if eq .Ticket.Status "closed"}}selected{{end}} class="bg-slate-900 text-slate-400">Closed</option>
+                    </select>
+                {{else}}
+                    {{if eq .Ticket.Status "open"}}
+                        <span class="px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20">Open</span>
+                    {{else if eq .Ticket.Status "in_progress"}}
+                        <span class="px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">In Progress</span>
+                    {{else if eq .Ticket.Status "resolved"}}
+                        <span class="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Resolved</span>
+                    {{else}}
+                        <span class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-800 text-slate-400 border border-slate-700">Closed</span>
+                    {{end}}
+                {{end}}
+            </div>
 
-            <!-- Priority Badge -->
-            {{if eq .Ticket.Priority "high"}}
-                <span class="px-3 py-1 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20">High Priority</span>
-            {{else if eq .Ticket.Priority "medium"}}
-                <span class="px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">Medium Priority</span>
-            {{else}}
-                <span class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-800 text-slate-400 border border-slate-700">Low Priority</span>
-            {{end}}
+            <!-- HTMX Priority Partial Badge -->
+            <div id="ticket-priority-{{.Ticket.ID}}" class="inline-flex items-center">
+                {{if or (eq .User.Role "admin") (eq .User.Role "support")}}
+                    <select name="priority"
+                            hx-patch="/tickets/{{.Ticket.ID}}/priority"
+                            hx-target="#ticket-priority-{{.Ticket.ID}}"
+                            hx-swap="outerHTML"
+                            class="text-xs font-semibold px-3 py-1.5 rounded-full cursor-pointer focus:outline-none transition-all border {{if eq .Ticket.Priority "high"}}bg-rose-500/10 text-rose-400 border-rose-500/30{{else if eq .Ticket.Priority "medium"}}bg-amber-500/10 text-amber-400 border-amber-500/30{{else}}bg-slate-800 text-slate-400 border-slate-700{{end}}">
+                        <option value="low" {{if eq .Ticket.Priority "low"}}selected{{end}} class="bg-slate-900 text-slate-400">Low Priority</option>
+                        <option value="medium" {{if eq .Ticket.Priority "medium"}}selected{{end}} class="bg-slate-900 text-amber-400">Medium Priority</option>
+                        <option value="high" {{if eq .Ticket.Priority "high"}}selected{{end}} class="bg-slate-900 text-rose-400">High Priority</option>
+                    </select>
+                {{else}}
+                    {{if eq .Ticket.Priority "high"}}
+                        <span class="px-3 py-1 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20">High Priority</span>
+                    {{else if eq .Ticket.Priority "medium"}}
+                        <span class="px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">Medium Priority</span>
+                    {{else}}
+                        <span class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-800 text-slate-400 border border-slate-700">Low Priority</span>
+                    {{end}}
+                {{end}}
+            </div>
         </div>
     </div>
 
@@ -74,15 +103,32 @@
                 <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400 pb-3 border-b border-slate-800">Ticket Details</h3>
 
                 <div>
-                    <span class="text-xs text-slate-500 block">Created By</span>
+                    <span class="text-xs text-slate-500 block mb-1">Created By</span>
                     <span class="text-sm font-medium text-slate-200">{{.Ticket.CreatedByName}}</span>
                 </div>
 
                 <div>
-                    <span class="text-xs text-slate-500 block">Assigned Agent</span>
-                    <span class="text-sm font-medium text-slate-200">
-                        {{if .Ticket.AssignedToName}}{{.Ticket.AssignedToName}}{{else}}<span class="text-slate-600 italic">Unassigned</span>{{end}}
-                    </span>
+                    <span class="text-xs text-slate-500 block mb-1">Assigned Agent</span>
+                    <div id="ticket-assignee-{{.Ticket.ID}}">
+                        {{if or (eq .User.Role "admin") (eq .User.Role "support")}}
+                            <select name="assigned_to"
+                                    hx-patch="/tickets/{{.Ticket.ID}}/assign"
+                                    hx-target="#ticket-assignee-{{.Ticket.ID}}"
+                                    hx-swap="outerHTML"
+                                    class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs font-medium text-slate-200 focus:outline-none focus:border-indigo-500 transition-all">
+                                <option value="" {{if not .Ticket.AssignedToID}}selected{{end}}>-- Unassigned --</option>
+                                {{range .Agents}}
+                                    <option value="{{.ID}}" {{if eq $.Ticket.AssignedToID .ID}}selected{{end}}>
+                                        {{.Name}} ({{.Role}})
+                                    </option>
+                                {{end}}
+                            </select>
+                        {{else}}
+                            <span class="text-sm font-medium text-slate-200">
+                                {{if .Ticket.AssignedToName}}{{.Ticket.AssignedToName}}{{else}}<span class="text-slate-600 italic">Unassigned</span>{{end}}
+                            </span>
+                        {{end}}
+                    </div>
                 </div>
 
                 <div>

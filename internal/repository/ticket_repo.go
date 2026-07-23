@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"ticDesk/internal/models"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -35,6 +36,25 @@ func (r *TicketRepository) GetCategories(ctx context.Context) ([]models.Category
 	return categories, nil
 }
 
+func (r *TicketRepository) GetSupportAgents(ctx context.Context) ([]models.User, error) {
+	query := `SELECT id, name, email, role FROM users WHERE role IN ('admin', 'support') AND is_active = true ORDER BY name ASC`
+	rows, err := r.db.Query(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch agents: %w", err)
+	}
+	defer rows.Close()
+
+	var agents []models.User
+	for rows.Next() {
+		var u models.User
+		if err := rows.Scan(&u.ID, &u.Name, &u.Email, &u.Role); err != nil {
+			return nil, err
+		}
+		agents = append(agents, u)
+	}
+	return agents, nil
+}
+
 func (r *TicketRepository) CreateTicket(ctx context.Context, title, description string, categoryID int, priority models.TicketPriority, createdByID string) (*models.Ticket, error) {
 	query := `
 		INSERT INTO tickets (title, description, category_id, priority, created_by)
@@ -49,7 +69,6 @@ func (r *TicketRepository) CreateTicket(ctx context.Context, title, description 
 		return nil, fmt.Errorf("failed to create ticket: %w", err)
 	}
 
-	// Create initial status history entry
 	historyQuery := `INSERT INTO ticket_status_history (ticket_id, changed_by, new_status) VALUES ($1, $2, $3)`
 	_, _ = r.db.Exec(ctx, historyQuery, t.ID, createdByID, t.Status)
 
@@ -101,7 +120,6 @@ func (r *TicketRepository) ListTickets(ctx context.Context, user *models.User) (
 	`
 
 	var args []interface{}
-	// Customers see only their own tickets
 	if user.Role == models.RoleCustomer {
 		query += ` WHERE t.created_by = $1 `
 		args = append(args, user.ID)
@@ -130,4 +148,52 @@ func (r *TicketRepository) ListTickets(ctx context.Context, user *models.User) (
 		tickets = append(tickets, t)
 	}
 	return tickets, nil
+}
+
+func (r *TicketRepository) UpdateTicketStatus(ctx context.Context, ticketID string, newStatus models.TicketStatus, changedBy string) (*models.Ticket, error) {
+	// Fetch current status first
+	currentTicket, err := r.GetTicketByID(ctx, ticketID)
+	if err != nil {
+		return nil, err
+	}
+
+	var resolvedAt *time.Time
+	if newStatus == models.StatusResolved || newStatus == models.StatusClosed {
+		now := time.Now()
+		resolvedAt = &now
+	}
+
+	query := `
+		UPDATE tickets 
+		SET status = $1, updated_at = now(), resolved_at = COALESCE($2, resolved_at)
+		WHERE id = $3
+	`
+	_, err = r.db.Exec(ctx, query, newStatus, resolvedAt, ticketID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update ticket status: %w", err)
+	}
+
+	// Insert into status history
+	historyQuery := `INSERT INTO ticket_status_history (ticket_id, changed_by, old_status, new_status) VALUES ($1, $2, $3, $4)`
+	_, _ = r.db.Exec(ctx, historyQuery, ticketID, changedBy, currentTicket.Status, newStatus)
+
+	return r.GetTicketByID(ctx, ticketID)
+}
+
+func (r *TicketRepository) UpdateTicketPriority(ctx context.Context, ticketID string, newPriority models.TicketPriority) (*models.Ticket, error) {
+	query := `UPDATE tickets SET priority = $1, updated_at = now() WHERE id = $2`
+	_, err := r.db.Exec(ctx, query, newPriority, ticketID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update ticket priority: %w", err)
+	}
+	return r.GetTicketByID(ctx, ticketID)
+}
+
+func (r *TicketRepository) UpdateTicketAssignee(ctx context.Context, ticketID string, assigneeID *string) (*models.Ticket, error) {
+	query := `UPDATE tickets SET assigned_to = $1, updated_at = now() WHERE id = $2`
+	_, err := r.db.Exec(ctx, query, assigneeID, ticketID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update assignee: %w", err)
+	}
+	return r.GetTicketByID(ctx, ticketID)
 }

@@ -1,0 +1,24 @@
+<div id="ticket-status-{{.Ticket.ID}}" class="inline-flex items-center">
+    {{if or (eq .User.Role "admin") (eq .User.Role "support")}}
+        <select name="status"
+                hx-patch="/tickets/{{.Ticket.ID}}/status"
+                hx-target="#ticket-status-{{.Ticket.ID}}"
+                hx-swap="outerHTML"
+                class="text-xs font-semibold px-3 py-1 rounded-full cursor-pointer focus:outline-none transition-all border {{if eq .Ticket.Status "open"}}bg-blue-500/10 text-blue-400 border-blue-500/30{{else if eq .Ticket.Status "in_progress"}}bg-amber-500/10 text-amber-400 border-amber-500/30{{else if eq .Ticket.Status "resolved"}}bg-emerald-500/10 text-emerald-400 border-emerald-500/30{{else}}bg-slate-800 text-slate-400 border-slate-700{{end}}">
+            <option value="open" {{if eq .Ticket.Status "open"}}selected{{end}} class="bg-slate-900 text-blue-400">Open</option>
+            <option value="in_progress" {{if eq .Ticket.Status "in_progress"}}selected{{end}} class="bg-slate-900 text-amber-400">In Progress</option>
+            <option value="resolved" {{if eq .Ticket.Status "resolved"}}selected{{end}} class="bg-slate-900 text-emerald-400">Resolved</option>
+            <option value="closed" {{if eq .Ticket.Status "closed"}}selected{{end}} class="bg-slate-900 text-slate-400">Closed</option>
+        </select>
+    {{else}}
+        {{if eq .Ticket.Status "open"}}
+            <span class="px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20">Open</span>
+        {{else if eq .Ticket.Status "in_progress"}}
+            <span class="px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">In Progress</span>
+        {{else if eq .Ticket.Status "resolved"}}
+            <span class="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Resolved</span>
+        {{else}}
+            <span class="px-3 py-1 rounded-full text-xs font-semibold bg-slate-800 text-slate-400 border border-slate-700">Closed</span>
+        {{end}}
+    {{end}}
+</div>

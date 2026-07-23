@@ -51,6 +51,11 @@ func New(
 		r.Get("/tickets/new", ticketHandler.ShowNewTicket)
 		r.Post("/tickets", ticketHandler.ProcessCreateTicket)
 		r.Get("/tickets/{id}", ticketHandler.ShowTicketDetail)
+
+		// HTMX Partial Mutation Routes
+		r.Patch("/tickets/{id}/status", ticketHandler.UpdateStatus)
+		r.Patch("/tickets/{id}/priority", ticketHandler.UpdatePriority)
+		r.Patch("/tickets/{id}/assign", ticketHandler.UpdateAssignee)
 	})
 
 	return r

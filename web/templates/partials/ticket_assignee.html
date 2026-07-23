@@ -1,0 +1,20 @@
+<div id="ticket-assignee-{{.Ticket.ID}}">
+    {{if or (eq .User.Role "admin") (eq .User.Role "support")}}
+        <select name="assigned_to"
+                hx-patch="/tickets/{{.Ticket.ID}}/assign"
+                hx-target="#ticket-assignee-{{.Ticket.ID}}"
+                hx-swap="outerHTML"
+                class="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs font-medium text-slate-200 focus:outline-none focus:border-indigo-500 transition-all">
+            <option value="" {{if not .Ticket.AssignedToID}}selected{{end}}>-- Unassigned --</option>
+            {{range .Agents}}
+                <option value="{{.ID}}" {{if eq $.Ticket.AssignedToID .ID}}selected{{end}}>
+                    {{.Name}} ({{.Role}})
+                </option>
+            {{end}}
+        </select>
+    {{else}}
+        <span class="text-sm font-medium text-slate-200">
+            {{if .Ticket.AssignedToName}}{{.Ticket.AssignedToName}}{{else}}<span class="text-slate-600 italic">Unassigned</span>{{end}}
+        </span>
+    {{end}}
+</div>
