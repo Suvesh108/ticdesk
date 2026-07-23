@@ -151,7 +151,6 @@ func (r *TicketRepository) ListTickets(ctx context.Context, user *models.User) (
 }
 
 func (r *TicketRepository) UpdateTicketStatus(ctx context.Context, ticketID string, newStatus models.TicketStatus, changedBy string) (*models.Ticket, error) {
-	// Fetch current status first
 	currentTicket, err := r.GetTicketByID(ctx, ticketID)
 	if err != nil {
 		return nil, err
@@ -173,7 +172,6 @@ func (r *TicketRepository) UpdateTicketStatus(ctx context.Context, ticketID stri
 		return nil, fmt.Errorf("failed to update ticket status: %w", err)
 	}
 
-	// Insert into status history
 	historyQuery := `INSERT INTO ticket_status_history (ticket_id, changed_by, old_status, new_status) VALUES ($1, $2, $3, $4)`
 	_, _ = r.db.Exec(ctx, historyQuery, ticketID, changedBy, currentTicket.Status, newStatus)
 
@@ -196,4 +194,113 @@ func (r *TicketRepository) UpdateTicketAssignee(ctx context.Context, ticketID st
 		return nil, fmt.Errorf("failed to update assignee: %w", err)
 	}
 	return r.GetTicketByID(ctx, ticketID)
+}
+
+func (r *TicketRepository) GetDashboardStats(ctx context.Context, user *models.User) (*models.DashboardStats, error) {
+	stats := &models.DashboardStats{
+		AvgResolutionTime: "< 15m",
+	}
+
+	whereClause := ""
+	var args []interface{}
+	if user.Role == models.RoleCustomer {
+		whereClause = " WHERE created_by = $1 "
+		args = append(args, user.ID)
+	}
+
+	// Status counts
+	statusQuery := fmt.Sprintf(`SELECT status, COUNT(*) FROM tickets %s GROUP BY status`, whereClause)
+	rows, err := r.db.Query(ctx, statusQuery, args...)
+	if err == nil {
+		for rows.Next() {
+			var st string
+			var cnt int
+			if err := rows.Scan(&st, &cnt); err == nil {
+				switch models.TicketStatus(st) {
+				case models.StatusOpen:
+					stats.OpenCount = cnt
+				case models.StatusInProgress:
+					stats.InProgressCount = cnt
+				case models.StatusResolved:
+					stats.ResolvedCount = cnt
+				case models.StatusClosed:
+					stats.ClosedCount = cnt
+				}
+			}
+		}
+		rows.Close()
+	}
+
+	// Priority counts
+	priorityQuery := fmt.Sprintf(`SELECT priority, COUNT(*) FROM tickets %s GROUP BY priority`, whereClause)
+	pRows, err := r.db.Query(ctx, priorityQuery, args...)
+	if err == nil {
+		for pRows.Next() {
+			var pr string
+			var cnt int
+			if err := pRows.Scan(&pr, &cnt); err == nil {
+				switch models.TicketPriority(pr) {
+				case models.PriorityLow:
+					stats.LowPriorityCount = cnt
+				case models.PriorityMedium:
+					stats.MediumPriorityCount = cnt
+				case models.PriorityHigh:
+					stats.HighPriorityCount = cnt
+				}
+			}
+		}
+		pRows.Close()
+	}
+
+	// Category distribution
+	catQuery := `
+		SELECT c.name, COUNT(t.id) 
+		FROM categories c 
+		LEFT JOIN tickets t ON c.id = t.category_id 
+		GROUP BY c.name 
+		ORDER BY count DESC
+	`
+	cRows, err := r.db.Query(ctx, catQuery)
+	if err == nil {
+		for cRows.Next() {
+			var cs models.CategoryStat
+			if err := cRows.Scan(&cs.Name, &cs.Count); err == nil {
+				stats.CategoryDistribution = append(stats.CategoryDistribution, cs)
+			}
+		}
+		cRows.Close()
+	}
+
+	// Agent Workload (Support & Admin)
+	agentQuery := `
+		SELECT u.id, u.name, COUNT(t.id) as open_count
+		FROM users u
+		LEFT JOIN tickets t ON u.id = t.assigned_to AND t.status IN ('open', 'in_progress')
+		WHERE u.role IN ('admin', 'support') AND u.is_active = true
+		GROUP BY u.id, u.name
+		ORDER BY open_count DESC
+	`
+	aRows, err := r.db.Query(ctx, agentQuery)
+	if err == nil {
+		for aRows.Next() {
+			var ag models.AgentStat
+			if err := aRows.Scan(&ag.AgentID, &ag.AgentName, &ag.OpenCount); err == nil {
+				stats.AgentWorkload = append(stats.AgentWorkload, ag)
+			}
+		}
+		aRows.Close()
+	}
+
+	// Average resolution interval
+	avgQuery := `
+		SELECT AVG(resolved_at - created_at)
+		FROM tickets
+		WHERE resolved_at IS NOT NULL
+	`
+	var avgDuration *time.Duration
+	if err := r.db.QueryRow(ctx, avgQuery).Scan(&avgDuration); err == nil && avgDuration != nil {
+		stats.AvgResolutionTime = fmt.Sprintf("%dh %dm", int(avgDuration.Hours()), int(avgDuration.Minutes())%60)
+	}
+
+	return stats, nil
 }

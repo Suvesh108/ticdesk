@@ -54,7 +54,7 @@ func main() {
 
 	// Initialize Handlers
 	authHandler := handlers.NewAuthHandler(userRepo)
-	dashboardHandler := handlers.NewDashboardHandler()
+	dashboardHandler := handlers.NewDashboardHandler(ticketRepo)
 	ticketHandler := handlers.NewTicketHandler(ticketRepo)
 	commentHandler := handlers.NewCommentHandler(commentRepo, attachmentRepo, ticketRepo, storageService)
 	attachmentHandler := handlers.NewAttachmentHandler(attachmentRepo, ticketRepo)

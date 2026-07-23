@@ -49,6 +49,7 @@ func New(
 		r.Use(auth.RequireAuth)
 
 		r.Get("/dashboard", dashboardHandler.ShowDashboard)
+		r.Get("/dashboard/stats.json", dashboardHandler.GetStatsJSON)
 
 		// Tickets Routes
 		r.Get("/tickets", ticketHandler.ShowTicketList)

@@ -94,3 +94,27 @@ type Attachment struct {
 	MimeType   string    `json:"mime_type"`
 	CreatedAt  time.Time `json:"created_at"`
 }
+
+type CategoryStat struct {
+	Name  string `json:"name"`
+	Count int    `json:"count"`
+}
+
+type AgentStat struct {
+	AgentID   string `json:"agent_id"`
+	AgentName string `json:"agent_name"`
+	OpenCount int    `json:"open_count"`
+}
+
+type DashboardStats struct {
+	OpenCount          int            `json:"open_count"`
+	InProgressCount    int            `json:"in_progress_count"`
+	ResolvedCount      int            `json:"resolved_count"`
+	ClosedCount        int            `json:"closed_count"`
+	LowPriorityCount   int            `json:"low_priority_count"`
+	MediumPriorityCount int           `json:"medium_priority_count"`
+	HighPriorityCount  int            `json:"high_priority_count"`
+	AvgResolutionTime  string         `json:"avg_resolution_time"`
+	CategoryDistribution []CategoryStat `json:"category_distribution"`
+	AgentWorkload      []AgentStat    `json:"agent_workload"`
+}

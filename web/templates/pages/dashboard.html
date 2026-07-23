@@ -46,7 +46,7 @@
                     </svg>
                 </div>
             </div>
-            <div class="text-3xl font-extrabold text-white">0</div>
+            <div class="text-3xl font-extrabold text-white">{{.Stats.OpenCount}}</div>
             <p class="text-xs text-slate-500 mt-2">Awaiting agent response</p>
         </div>
 
@@ -60,7 +60,7 @@
                     </svg>
                 </div>
             </div>
-            <div class="text-3xl font-extrabold text-white">0</div>
+            <div class="text-3xl font-extrabold text-white">{{.Stats.InProgressCount}}</div>
             <p class="text-xs text-slate-500 mt-2">Active troubleshooting</p>
         </div>
 
@@ -74,26 +74,67 @@
                     </svg>
                 </div>
             </div>
-            <div class="text-3xl font-extrabold text-white">0</div>
+            <div class="text-3xl font-extrabold text-white">{{.Stats.ResolvedCount}}</div>
             <p class="text-xs text-slate-500 mt-2">Successfully closed</p>
         </div>
 
         <!-- Avg Resolution Time -->
         <div class="glass-card glass-card-hover rounded-2xl p-6 transition-all duration-200">
             <div class="flex items-center justify-between mb-4">
-                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Avg SLA Time</span>
+                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Avg Resolution</span>
                 <div class="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
                 </div>
             </div>
-            <div class="text-3xl font-extrabold text-white">&lt; 15m</div>
-            <p class="text-xs text-slate-500 mt-2">Response time target</p>
+            <div class="text-3xl font-extrabold text-white">{{.Stats.AvgResolutionTime}}</div>
+            <p class="text-xs text-slate-500 mt-2">SLA resolution average</p>
         </div>
     </div>
 
-    <!-- Active Tickets Placeholder Container -->
+    <!-- Analytics & Workload Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Category Distribution -->
+        <div class="glass-card rounded-2xl p-6 border border-slate-800">
+            <h3 class="text-sm font-bold text-white mb-4">Ticket Breakdown by Category</h3>
+            <div class="space-y-4">
+                {{range .Stats.CategoryDistribution}}
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-slate-300 font-medium">{{.Name}}</span>
+                            <span class="text-slate-400 font-mono">{{.Count}} tickets</span>
+                        </div>
+                        <div class="w-full bg-slate-900 rounded-full h-2 overflow-hidden border border-slate-800">
+                            <div class="bg-gradient-to-r from-indigo-500 to-indigo-400 h-2 rounded-full" style="width: {{if gt .Count 0}}100%{{else}}0%{{end}}"></div>
+                        </div>
+                    </div>
+                {{end}}
+            </div>
+        </div>
+
+        <!-- Agent Workload (Support / Admin view) -->
+        <div class="glass-card rounded-2xl p-6 border border-slate-800">
+            <h3 class="text-sm font-bold text-white mb-4">Agent Workload & Open Queue</h3>
+            <div class="space-y-3">
+                {{range .Stats.AgentWorkload}}
+                    <div class="flex items-center justify-between p-3 rounded-xl bg-slate-900/60 border border-slate-800">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 rounded-full bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-xs font-bold text-indigo-400">
+                                {{slice .AgentName 0 1}}
+                            </div>
+                            <span class="text-sm font-medium text-slate-200">{{.AgentName}}</span>
+                        </div>
+                        <span class="px-2.5 py-1 rounded-full text-xs font-semibold {{if gt .OpenCount 0}}bg-amber-500/10 text-amber-400 border border-amber-500/20{{else}}bg-slate-800 text-slate-400{{end}}">
+                            {{.OpenCount}} open tickets
+                        </span>
+                    </div>
+                {{end}}
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Tickets Container -->
     <div class="glass-card rounded-2xl p-8 border border-slate-800">
         <div class="flex items-center justify-between mb-6">
             <div>
@@ -103,15 +144,31 @@
             <a href="/tickets" class="text-xs font-semibold text-indigo-400 hover:text-indigo-300 transition-colors">View all →</a>
         </div>
 
-        <div class="text-center py-12 border border-dashed border-slate-800 rounded-xl bg-slate-950/40">
-            <div class="w-12 h-12 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center mx-auto mb-3 text-slate-500">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
-                </svg>
+        {{if .Tickets}}
+            <div class="divide-y divide-slate-800/60">
+                {{range .Tickets}}
+                    <div class="py-3 flex items-center justify-between hover:bg-slate-900/40 px-3 rounded-xl transition-colors">
+                        <div class="flex items-center space-x-3">
+                            <span class="font-mono text-xs text-slate-500">#{{.TicketNumber}}</span>
+                            <a href="/tickets/{{.ID}}" class="text-sm font-medium text-white hover:text-indigo-400 transition-colors">
+                                {{.Title}}
+                            </a>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <span class="text-xs text-slate-400">{{.CategoryName}}</span>
+                            <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold {{if eq .Status "open"}}bg-blue-500/10 text-blue-400{{else if eq .Status "in_progress"}}bg-amber-500/10 text-amber-400{{else}}bg-emerald-500/10 text-emerald-400{{end}}">
+                                {{.Status}}
+                            </span>
+                        </div>
+                    </div>
+                {{end}}
             </div>
-            <h3 class="text-sm font-semibold text-slate-300">No tickets found</h3>
-            <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">Phase 2 Authentication is live! Next up in Phase 3 is ticket creation & list management.</p>
-        </div>
+        {{else}}
+            <div class="text-center py-12 border border-dashed border-slate-800 rounded-xl bg-slate-950/40">
+                <h3 class="text-sm font-semibold text-slate-300">No recent tickets</h3>
+                <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">Create a ticket to start tracking support requests.</p>
+            </div>
+        {{end}}
     </div>
 
 </div>
