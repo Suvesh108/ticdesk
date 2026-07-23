@@ -31,7 +31,11 @@ func (h *AdminHandler) ShowUserManagement(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	tmpl, err := template.ParseFiles(
+	tmpl, err := template.New("base.html").Funcs(template.FuncMap{
+		"sub": func(a, b int) int { return a - b },
+		"add": func(a, b int) int { return a + b },
+		"mul": func(a, b int) int { return a * b },
+	}).ParseFiles(
 		"web/templates/layouts/base.html",
 		"web/templates/pages/admin_users.html",
 	)
@@ -40,7 +44,11 @@ func (h *AdminHandler) ShowUserManagement(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	data := AdminUsersData{User: user, Users: users}
+	data := map[string]interface{}{
+		"Title": "User Management — ticDesk",
+		"User":  user,
+		"Users": users,
+	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	_ = tmpl.ExecuteTemplate(w, "base.html", data)
 }
