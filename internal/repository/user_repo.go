@@ -20,11 +20,11 @@ func (r *UserRepository) CreateUser(ctx context.Context, name, email, passwordHa
 	query := `
 		INSERT INTO users (name, email, password_hash, role)
 		VALUES ($1, $2, $3, $4)
-		RETURNING id, name, email, role, is_active, created_at
+		RETURNING id, name, email, role, is_active, is_temporary, created_at
 	`
 	user := &models.User{}
 	err := r.db.QueryRow(ctx, query, name, email, passwordHash, role).Scan(
-		&user.ID, &user.Name, &user.Email, &user.Role, &user.IsActive, &user.CreatedAt,
+		&user.ID, &user.Name, &user.Email, &user.Role, &user.IsActive, &user.IsTemporary, &user.CreatedAt,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create user: %w", err)
@@ -32,15 +32,36 @@ func (r *UserRepository) CreateUser(ctx context.Context, name, email, passwordHa
 	return user, nil
 }
 
+func (r *UserRepository) CreateTemporaryUser(ctx context.Context, name, email, passwordHash string) (*models.User, error) {
+	query := `
+		INSERT INTO users (name, email, password_hash, role, is_temporary)
+		VALUES ($1, $2, $3, 'customer', true)
+		RETURNING id, name, email, role, is_active, is_temporary, created_at
+	`
+	user := &models.User{}
+	err := r.db.QueryRow(ctx, query, name, email, passwordHash).Scan(
+		&user.ID, &user.Name, &user.Email, &user.Role, &user.IsActive, &user.IsTemporary, &user.CreatedAt,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create temporary user: %w", err)
+	}
+	return user, nil
+}
+
+func (r *UserRepository) DeleteUser(ctx context.Context, id string) error {
+	_, err := r.db.Exec(ctx, `DELETE FROM users WHERE id = $1 AND is_temporary = true`, id)
+	return err
+}
+
 func (r *UserRepository) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
 	query := `
-		SELECT id, name, email, password_hash, role, is_active, created_at
+		SELECT id, name, email, password_hash, role, is_active, is_temporary, created_at
 		FROM users
 		WHERE email = $1 AND is_active = true
 	`
 	user := &models.User{}
 	err := r.db.QueryRow(ctx, query, email).Scan(
-		&user.ID, &user.Name, &user.Email, &user.PasswordHash, &user.Role, &user.IsActive, &user.CreatedAt,
+		&user.ID, &user.Name, &user.Email, &user.PasswordHash, &user.Role, &user.IsActive, &user.IsTemporary, &user.CreatedAt,
 	)
 	if err != nil {
 		return nil, err
@@ -50,13 +71,13 @@ func (r *UserRepository) GetUserByEmail(ctx context.Context, email string) (*mod
 
 func (r *UserRepository) GetUserByID(ctx context.Context, id string) (*models.User, error) {
 	query := `
-		SELECT id, name, email, role, is_active, created_at
+		SELECT id, name, email, role, is_active, is_temporary, created_at
 		FROM users
 		WHERE id = $1 AND is_active = true
 	`
 	user := &models.User{}
 	err := r.db.QueryRow(ctx, query, id).Scan(
-		&user.ID, &user.Name, &user.Email, &user.Role, &user.IsActive, &user.CreatedAt,
+		&user.ID, &user.Name, &user.Email, &user.Role, &user.IsActive, &user.IsTemporary, &user.CreatedAt,
 	)
 	if err != nil {
 		return nil, err
@@ -65,7 +86,7 @@ func (r *UserRepository) GetUserByID(ctx context.Context, id string) (*models.Us
 }
 
 func (r *UserRepository) ListUsers(ctx context.Context) ([]models.User, error) {
-	query := `SELECT id, name, email, role, is_active, created_at FROM users ORDER BY created_at DESC`
+	query := `SELECT id, name, email, role, is_active, is_temporary, created_at FROM users ORDER BY created_at DESC`
 	rows, err := r.db.Query(ctx, query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list users: %w", err)
@@ -75,7 +96,7 @@ func (r *UserRepository) ListUsers(ctx context.Context) ([]models.User, error) {
 	var users []models.User
 	for rows.Next() {
 		var u models.User
-		if err := rows.Scan(&u.ID, &u.Name, &u.Email, &u.Role, &u.IsActive, &u.CreatedAt); err != nil {
+		if err := rows.Scan(&u.ID, &u.Name, &u.Email, &u.Role, &u.IsActive, &u.IsTemporary, &u.CreatedAt); err != nil {
 			return nil, err
 		}
 		users = append(users, u)

@@ -73,9 +73,10 @@ func New(
 			r.Post("/notes/{id}/pin", noteHandler.TogglePin)
 			r.Post("/notes/{id}/delete", noteHandler.DeleteNote)
 
-			// ticMail Built-in External Email System Inspector
+			// ticMail Built-in External Email Engine & Inbound Ingestion
 			r.Get("/ticmail", ticmailHandler.RenderTicMail)
 			r.Post("/ticmail/clear", ticmailHandler.ClearTicMail)
+			r.Post("/ticmail/simulate", ticmailHandler.SimulateInboundEmail)
 
 			// HTMX Partial Mutation Routes
 			r.Patch("/tickets/{id}/status", ticketHandler.UpdateStatus)

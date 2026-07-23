@@ -12,16 +12,65 @@
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
                 </svg>
-                <span>Built-in ticMail Alert Inspector</span>
+                <span>Built-in ticMail Inbound Email Engine</span>
             </div>
-            <h1 class="text-xl font-bold text-white tracking-tight">ticMail External Email Notification Engine</h1>
-            <p class="text-xs text-slate-400 mt-0.5">Built-in email inspector capturing all system notification alerts, status updates, and customer emails</p>
+            <h1 class="text-xl font-bold text-white tracking-tight">ticMail External Email & Guest Ingestion Portal</h1>
+            <p class="text-xs text-slate-400 mt-0.5">Automated inbound email ingestion, temporary guest credentials generation, auto-assignment, & closure auto-deletion</p>
         </div>
 
         <form action="/ticmail/clear" method="POST">
             <button type="submit" class="px-3 py-1.5 bg-[#252423] hover:bg-rose-500/20 hover:text-rose-400 border border-[#323130] text-slate-300 text-xs font-semibold rounded transition-colors">
                 Clear Email Inbox Logs
             </button>
+        </form>
+    </div>
+
+    <!-- Inbound Email Ingestion Simulator Card -->
+    <div class="outlook-card p-5">
+        <div class="flex items-center justify-between pb-2 border-b border-[#292827] mb-3">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-slate-300">✉️ Inbound External Customer Email Simulator (Gmail / Outlook)</h2>
+            <span class="text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono">Auto-Assign & Temporary Guest Credentials Active</span>
+        </div>
+
+        <form action="/ticmail/simulate" method="POST" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+                <label for="sender_name" class="block text-[11px] font-semibold text-slate-400 mb-1">Customer Name</label>
+                <input type="text" id="sender_name" name="sender_name" placeholder="e.g. David Miller" required 
+                       class="w-full px-3 py-2 bg-[#1b1a19] border border-[#323130] rounded text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500">
+            </div>
+
+            <div>
+                <label for="sender_email" class="block text-[11px] font-semibold text-slate-400 mb-1">Customer External Email</label>
+                <input type="email" id="sender_email" name="sender_email" placeholder="e.g. david.miller@gmail.com" required 
+                       class="w-full px-3 py-2 bg-[#1b1a19] border border-[#323130] rounded text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500">
+            </div>
+
+            <div>
+                <label for="priority" class="block text-[11px] font-semibold text-slate-400 mb-1">Priority Level</label>
+                <select id="priority" name="priority" class="w-full px-3 py-2 bg-[#1b1a19] border border-[#323130] rounded text-xs text-slate-200 focus:outline-none focus:border-sky-500">
+                    <option value="high">High Priority</option>
+                    <option value="medium" selected>Medium Priority</option>
+                    <option value="low">Low Priority</option>
+                </select>
+            </div>
+
+            <div class="sm:col-span-2">
+                <label for="subject" class="block text-[11px] font-semibold text-slate-400 mb-1">Email Subject Line</label>
+                <input type="text" id="subject" name="subject" placeholder="e.g. Urgent: Payment Gateway API Returning HTTP 502 Bad Gateway" required 
+                       class="w-full px-3 py-2 bg-[#1b1a19] border border-[#323130] rounded text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500">
+            </div>
+
+            <div class="flex items-end">
+                <button type="submit" class="w-full py-2 bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs rounded transition-colors shadow-sm">
+                    🚀 Simulate Sending Inbound Email
+                </button>
+            </div>
+
+            <div class="sm:col-span-3">
+                <label for="description" class="block text-[11px] font-semibold text-slate-400 mb-1">Email Message Body</label>
+                <textarea id="description" name="description" rows="2" required placeholder="Describe the issue reported by the customer..." 
+                          class="w-full px-3 py-2 bg-[#1b1a19] border border-[#323130] rounded text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"></textarea>
+            </div>
         </form>
     </div>
 
@@ -61,7 +110,6 @@
                             </div>
                         </div>
 
-                        <!-- Rendered HTML iframe container -->
                         <div class="bg-white rounded p-4 text-black min-h-[400px]">
                             <iframe srcdoc="{{$log.BodyHTML}}" class="w-full h-[450px] border-0"></iframe>
                         </div>
@@ -76,7 +124,7 @@
                 📬
             </div>
             <h3 class="text-sm font-bold text-white">ticMail Inbox is Empty</h3>
-            <p class="text-xs text-slate-400 max-w-sm mx-auto">Create a ticket or post a reply on ticDesk to trigger an automatic ticMail external notification alert!</p>
+            <p class="text-xs text-slate-400 max-w-sm mx-auto">Use the simulator form above to simulate an inbound external customer email!</p>
         </div>
     {{end}}
 

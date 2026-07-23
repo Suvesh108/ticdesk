@@ -1,23 +1,15 @@
 package handlers
 
 import (
+	"fmt"
 	"html/template"
 	"net/http"
 	"strconv"
-
 	"ticDesk/internal/auth"
 	"ticDesk/internal/models"
 	"ticDesk/internal/repository"
 	"ticDesk/internal/services"
-
-	"github.com/go-chi/chi/v5"
 )
-
-var funcMap = template.FuncMap{
-	"sub": func(a, b int) int { return a - b },
-	"add": func(a, b int) int { return a + b },
-	"mul": func(a, b int) int { return a * b },
-}
 
 type TicketHandler struct {
 	repo         *repository.TicketRepository
@@ -25,7 +17,10 @@ type TicketHandler struct {
 }
 
 func NewTicketHandler(repo *repository.TicketRepository, emailService *services.EmailService) *TicketHandler {
-	return &TicketHandler{repo: repo, emailService: emailService}
+	return &TicketHandler{
+		repo:         repo,
+		emailService: emailService,
+	}
 }
 
 type TicketListData struct {
@@ -37,11 +32,6 @@ type TicketListData struct {
 	Limit      int
 }
 
-type TicketNewData struct {
-	User       *models.User
-	Categories []models.Category
-}
-
 type TicketDetailData struct {
 	User   *models.User
 	Ticket *models.Ticket
@@ -50,13 +40,16 @@ type TicketDetailData struct {
 
 func (h *TicketHandler) ShowTicketList(w http.ResponseWriter, r *http.Request) {
 	user := auth.GetUserFromContext(r.Context())
-	_ = r.ParseForm()
+	if user == nil {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
 
-	search := r.FormValue("search")
-	categoryIDStr := r.FormValue("category_id")
-	status := r.FormValue("status")
-	priority := r.FormValue("priority")
-	pageStr := r.FormValue("page")
+	search := r.URL.Query().Get("search")
+	status := r.URL.Query().Get("status")
+	priority := r.URL.Query().Get("priority")
+	categoryIDStr := r.URL.Query().Get("category_id")
+	pageStr := r.URL.Query().Get("page")
 
 	categoryID, _ := strconv.Atoi(categoryIDStr)
 	page, _ := strconv.Atoi(pageStr)
@@ -68,8 +61,8 @@ func (h *TicketHandler) ShowTicketList(w http.ResponseWriter, r *http.Request) {
 	opts := repository.TicketFilterOptions{
 		Search:     search,
 		CategoryID: categoryID,
-		Status:     status,
-		Priority:   priority,
+		Status:     models.TicketStatus(status),
+		Priority:   models.TicketPriority(priority),
 		Page:       page,
 		Limit:      limit,
 	}
@@ -91,11 +84,11 @@ func (h *TicketHandler) ShowTicketList(w http.ResponseWriter, r *http.Request) {
 		Limit:      limit,
 	}
 
-	// Check if this is an HTMX partial request
+	// Check if this is an HTMX request
 	if r.Header.Get("HX-Request") == "true" {
-		tmpl, err := template.New("ticket_table.html").Funcs(funcMap).ParseFiles("web/templates/partials/ticket_table.html")
+		tmpl, err := template.ParseFiles("web/templates/partials/ticket_table.html")
 		if err != nil {
-			http.Error(w, "Partial error: "+err.Error(), http.StatusInternalServerError)
+			http.Error(w, "Template Error: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -103,7 +96,7 @@ func (h *TicketHandler) ShowTicketList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tmpl, err := template.New("base.html").Funcs(funcMap).ParseFiles(
+	tmpl, err := template.ParseFiles(
 		"web/templates/layouts/base.html",
 		"web/templates/pages/ticket_list.html",
 		"web/templates/partials/ticket_table.html",
@@ -119,13 +112,18 @@ func (h *TicketHandler) ShowTicketList(w http.ResponseWriter, r *http.Request) {
 
 func (h *TicketHandler) ShowNewTicket(w http.ResponseWriter, r *http.Request) {
 	user := auth.GetUserFromContext(r.Context())
-	categories, err := h.repo.GetCategories(r.Context())
-	if err != nil {
-		http.Error(w, "Failed to load categories", http.StatusInternalServerError)
+	if user == nil {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
 
-	tmpl, err := template.New("base.html").Funcs(funcMap).ParseFiles(
+	categories, err := h.repo.GetCategories(r.Context())
+	if err != nil {
+		http.Error(w, "Failed to load categories: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	tmpl, err := template.ParseFiles(
 		"web/templates/layouts/base.html",
 		"web/templates/pages/ticket_new.html",
 	)
@@ -134,32 +132,35 @@ func (h *TicketHandler) ShowNewTicket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := TicketNewData{User: user, Categories: categories}
+	data := map[string]interface{}{
+		"User":       user,
+		"Categories": categories,
+	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	_ = tmpl.ExecuteTemplate(w, "base.html", data)
 }
 
 func (h *TicketHandler) ProcessCreateTicket(w http.ResponseWriter, r *http.Request) {
 	user := auth.GetUserFromContext(r.Context())
-
-	if err := r.ParseForm(); err != nil {
-		http.Error(w, "Invalid form submission", http.StatusBadRequest)
+	if user == nil {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
 
+	_ = r.ParseForm()
 	title := r.FormValue("title")
 	description := r.FormValue("description")
 	categoryIDStr := r.FormValue("category_id")
 	priorityStr := r.FormValue("priority")
 
-	categoryID, err := strconv.Atoi(categoryIDStr)
-	if err != nil {
-		http.Error(w, "Invalid category", http.StatusBadRequest)
+	if title == "" || description == "" {
+		http.Error(w, "Title and description are required", http.StatusBadRequest)
 		return
 	}
 
+	categoryID, _ := strconv.Atoi(categoryIDStr)
 	priority := models.TicketPriority(priorityStr)
-	if priority != models.PriorityLow && priority != models.PriorityMedium && priority != models.PriorityHigh {
+	if priority == "" {
 		priority = models.PriorityMedium
 	}
 
@@ -169,37 +170,41 @@ func (h *TicketHandler) ProcessCreateTicket(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	// Trigger Email Notification (non-blocking)
+	// Trigger Email Notification Worker
 	if h.emailService != nil {
 		h.emailService.NotifyTicketCreated(ticket, user.Email)
 	}
 
-	http.Redirect(w, r, "/tickets/"+ticket.ID, http.StatusSeeOther)
+	http.Redirect(w, r, fmt.Sprintf("/tickets/%s", ticket.ID), http.StatusSeeOther)
 }
 
 func (h *TicketHandler) ShowTicketDetail(w http.ResponseWriter, r *http.Request) {
 	user := auth.GetUserFromContext(r.Context())
-	ticketID := chi.URLParam(r, "id")
-
-	ticket, err := h.repo.GetTicketByID(r.Context(), ticketID)
-	if err != nil {
-		http.Error(w, "Ticket not found", http.StatusNotFound)
+	if user == nil {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
 
-	if user.Role == models.RoleCustomer && ticket.CreatedByID != user.ID {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+	ticketID := r.PathValue("id")
+	if ticketID == "" {
+		http.NotFound(w, r)
+		return
+	}
+
+	ticket, err := h.repo.GetTicketByID(r.Context(), ticketID)
+	if err != nil {
+		http.NotFound(w, r)
 		return
 	}
 
 	agents, _ := h.repo.GetSupportAgents(r.Context())
 
-	tmpl, err := template.New("base.html").Funcs(funcMap).ParseFiles(
+	tmpl, err := template.ParseFiles(
 		"web/templates/layouts/base.html",
 		"web/templates/pages/ticket_detail.html",
 	)
 	if err != nil {
-		http.Error(w, "Template error: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Template Error: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -208,80 +213,92 @@ func (h *TicketHandler) ShowTicketDetail(w http.ResponseWriter, r *http.Request)
 		Ticket: ticket,
 		Agents: agents,
 	}
-
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	_ = tmpl.ExecuteTemplate(w, "base.html", data)
 }
 
 func (h *TicketHandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	user := auth.GetUserFromContext(r.Context())
-	ticketID := chi.URLParam(r, "id")
-
-	if user.Role != models.RoleAdmin && user.Role != models.RoleSupport {
+	if user == nil || (user.Role != models.RoleAdmin && user.Role != models.RoleSupport) {
 		http.Error(w, "Forbidden", http.StatusForbidden)
 		return
 	}
 
 	_ = r.ParseForm()
-	statusStr := r.FormValue("status")
-	if statusStr == "" {
-		statusStr = r.URL.Query().Get("status")
+	ticketID := r.PathValue("id")
+	newStatusStr := r.FormValue("status")
+	if newStatusStr == "" {
+		newStatusStr = r.URL.Query().Get("status")
 	}
 
-	newStatus := models.TicketStatus(statusStr)
+	newStatus := models.TicketStatus(newStatusStr)
 	ticket, err := h.repo.UpdateTicketStatus(r.Context(), ticketID, newStatus, user.ID)
 	if err != nil {
 		http.Error(w, "Failed to update status: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// Trigger Email Notification (non-blocking)
+	// Trigger Email Alert
 	if h.emailService != nil {
 		h.emailService.NotifyStatusChanged(ticket, ticket.Status, newStatus, user.Email)
 	}
 
-	renderPartial(w, "ticket_status_badge.html", map[string]interface{}{"Ticket": ticket, "User": user})
+	tmpl, err := template.ParseFiles("web/templates/partials/ticket_status_badge.html")
+	if err != nil {
+		http.Error(w, "Template Error: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	data := map[string]interface{}{
+		"User":   user,
+		"Ticket": ticket,
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	_ = tmpl.Execute(w, data)
 }
 
 func (h *TicketHandler) UpdatePriority(w http.ResponseWriter, r *http.Request) {
 	user := auth.GetUserFromContext(r.Context())
-	ticketID := chi.URLParam(r, "id")
-
-	if user.Role != models.RoleAdmin && user.Role != models.RoleSupport {
+	if user == nil || (user.Role != models.RoleAdmin && user.Role != models.RoleSupport) {
 		http.Error(w, "Forbidden", http.StatusForbidden)
 		return
 	}
 
 	_ = r.ParseForm()
-	priorityStr := r.FormValue("priority")
-	if priorityStr == "" {
-		priorityStr = r.URL.Query().Get("priority")
-	}
+	ticketID := r.PathValue("id")
+	newPriorityStr := r.FormValue("priority")
+	newPriority := models.TicketPriority(newPriorityStr)
 
-	newPriority := models.TicketPriority(priorityStr)
 	ticket, err := h.repo.UpdateTicketPriority(r.Context(), ticketID, newPriority)
 	if err != nil {
 		http.Error(w, "Failed to update priority: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	renderPartial(w, "ticket_priority_badge.html", map[string]interface{}{"Ticket": ticket, "User": user})
+	tmpl, err := template.ParseFiles("web/templates/partials/ticket_priority_badge.html")
+	if err != nil {
+		http.Error(w, "Template Error: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	data := map[string]interface{}{
+		"User":   user,
+		"Ticket": ticket,
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	_ = tmpl.Execute(w, data)
 }
 
 func (h *TicketHandler) UpdateAssignee(w http.ResponseWriter, r *http.Request) {
 	user := auth.GetUserFromContext(r.Context())
-	ticketID := chi.URLParam(r, "id")
-
-	if user.Role != models.RoleAdmin && user.Role != models.RoleSupport {
+	if user == nil || (user.Role != models.RoleAdmin && user.Role != models.RoleSupport) {
 		http.Error(w, "Forbidden", http.StatusForbidden)
 		return
 	}
 
 	_ = r.ParseForm()
+	ticketID := r.PathValue("id")
 	assigneeIDStr := r.FormValue("assigned_to")
-	if assigneeIDStr == "" {
-		assigneeIDStr = r.URL.Query().Get("assigned_to")
-	}
 
 	var assigneeID *string
 	if assigneeIDStr != "" {
@@ -295,14 +312,17 @@ func (h *TicketHandler) UpdateAssignee(w http.ResponseWriter, r *http.Request) {
 	}
 
 	agents, _ := h.repo.GetSupportAgents(r.Context())
-	renderPartial(w, "ticket_assignee.html", map[string]interface{}{"Ticket": ticket, "User": user, "Agents": agents})
-}
 
-func renderPartial(w http.ResponseWriter, templateName string, data interface{}) {
-	tmpl, err := template.New(templateName).Funcs(funcMap).ParseFiles("web/templates/partials/" + templateName)
+	tmpl, err := template.ParseFiles("web/templates/partials/ticket_assignee.html")
 	if err != nil {
-		http.Error(w, "Partial render error: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Template Error: "+err.Error(), http.StatusInternalServerError)
 		return
+	}
+
+	data := map[string]interface{}{
+		"User":   user,
+		"Ticket": ticket,
+		"Agents": agents,
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	_ = tmpl.Execute(w, data)

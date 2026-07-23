@@ -76,7 +76,7 @@ func main() {
 	adminHandler := handlers.NewAdminHandler(userRepo)
 	calendarHandler := handlers.NewCalendarHandler(scheduleRepo, tmpl)
 	noteHandler := handlers.NewNoteHandler(noteRepo, tmpl)
-	ticmailHandler := handlers.NewTicMailHandler(ticmailRepo, tmpl)
+	ticmailHandler := handlers.NewTicMailHandler(ticmailRepo, userRepo, ticketRepo, emailService, tmpl)
 
 	// Build Router
 	r := router.New(

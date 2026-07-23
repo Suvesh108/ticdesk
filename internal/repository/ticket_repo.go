@@ -3,20 +3,12 @@ package repository
 import (
 	"context"
 	"fmt"
+	"strings"
 	"ticDesk/internal/models"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
-
-type TicketFilterOptions struct {
-	Search     string
-	CategoryID int
-	Status     string
-	Priority   string
-	Page       int
-	Limit      int
-}
 
 type TicketRepository struct {
 	db *pgxpool.Pool
@@ -81,7 +73,35 @@ func (r *TicketRepository) CreateTicket(ctx context.Context, title, description 
 	historyQuery := `INSERT INTO ticket_status_history (ticket_id, changed_by, new_status) VALUES ($1, $2, $3)`
 	_, _ = r.db.Exec(ctx, historyQuery, t.ID, createdByID, t.Status)
 
-	return t, nil
+	// Run Intelligent Auto-Assignment Algorithm
+	_, _ = r.AutoAssignTicket(ctx, t.ID)
+
+	return r.GetTicketByID(ctx, t.ID)
+}
+
+func (r *TicketRepository) AutoAssignTicket(ctx context.Context, ticketID string) (*models.Ticket, error) {
+	// Select active support agent with the lowest open ticket workload
+	query := `
+		SELECT u.id
+		FROM users u
+		LEFT JOIN tickets t ON u.id = t.assigned_to AND t.status IN ('open', 'in_progress')
+		WHERE u.role IN ('admin', 'support') AND u.is_active = true
+		GROUP BY u.id, u.created_at
+		ORDER BY COUNT(t.id) ASC, u.created_at ASC
+		LIMIT 1;
+	`
+	var selectedAgentID string
+	err := r.db.QueryRow(ctx, query).Scan(&selectedAgentID)
+	if err != nil {
+		return nil, err
+	}
+
+	updateQuery := `UPDATE tickets SET assigned_to = $1, auto_assigned = true, updated_at = now() WHERE id = $2`
+	_, err = r.db.Exec(ctx, updateQuery, selectedAgentID, ticketID)
+	if err != nil {
+		return nil, err
+	}
+	return r.GetTicketByID(ctx, ticketID)
 }
 
 func (r *TicketRepository) GetTicketByID(ctx context.Context, id string) (*models.Ticket, error) {
@@ -90,12 +110,13 @@ func (r *TicketRepository) GetTicketByID(ctx context.Context, id string) (*model
 			t.id, t.ticket_number, t.title, t.description, t.category_id, 
 			COALESCE(c.name, '') as category_name,
 			t.priority, t.status, 
-			t.created_by, u1.name as created_by_name,
+			t.created_by, COALESCE(u1.name, 'Guest Customer') as created_by_name,
 			t.assigned_to, COALESCE(u2.name, '') as assigned_to_name,
+			t.auto_assigned,
 			t.created_at, t.updated_at, t.resolved_at
 		FROM tickets t
 		LEFT JOIN categories c ON t.category_id = c.id
-		INNER JOIN users u1 ON t.created_by = u1.id
+		LEFT JOIN users u1 ON t.created_by = u1.id
 		LEFT JOIN users u2 ON t.assigned_to = u2.id
 		WHERE t.id = $1
 	`
@@ -105,6 +126,7 @@ func (r *TicketRepository) GetTicketByID(ctx context.Context, id string) (*model
 		&t.CategoryName, &t.Priority, &t.Status,
 		&t.CreatedByID, &t.CreatedByName,
 		&t.AssignedToID, &t.AssignedToName,
+		&t.AutoAssigned,
 		&t.CreatedAt, &t.UpdatedAt, &t.ResolvedAt,
 	)
 	if err != nil {
@@ -118,76 +140,87 @@ func (r *TicketRepository) ListTickets(ctx context.Context, user *models.User) (
 	return tickets, err
 }
 
+type TicketFilterOptions struct {
+	Search     string
+	Status     models.TicketStatus
+	Priority   models.TicketPriority
+	CategoryID int
+	Page       int
+	Limit      int
+}
+
 func (r *TicketRepository) ListTicketsFiltered(ctx context.Context, user *models.User, opts TicketFilterOptions) ([]models.Ticket, int, error) {
-	if opts.Page < 1 {
+	if opts.Page <= 0 {
 		opts.Page = 1
 	}
-	if opts.Limit < 1 {
+	if opts.Limit <= 0 {
 		opts.Limit = 10
 	}
 	offset := (opts.Page - 1) * opts.Limit
 
-	whereConditions := []string{"1=1"}
-	var args []interface{}
-	argID := 1
+	whereClauses := []string{"1=1"}
+	args := []interface{}{}
+	argPos := 1
 
 	if user.Role == models.RoleCustomer {
-		whereConditions = append(whereConditions, fmt.Sprintf("t.created_by = $%d", argID))
+		whereClauses = append(whereClauses, fmt.Sprintf("t.created_by = $%d", argPos))
 		args = append(args, user.ID)
-		argID++
-	}
-
-	if opts.Search != "" {
-		whereConditions = append(whereConditions, fmt.Sprintf("(t.title ILIKE $%d OR t.description ILIKE $%d)", argID, argID))
-		args = append(args, "%"+opts.Search+"%")
-		argID++
-	}
-
-	if opts.CategoryID > 0 {
-		whereConditions = append(whereConditions, fmt.Sprintf("t.category_id = $%d", argID))
-		args = append(args, opts.CategoryID)
-		argID++
+		argPos++
 	}
 
 	if opts.Status != "" {
-		whereConditions = append(whereConditions, fmt.Sprintf("t.status = $%d", argID))
+		whereClauses = append(whereClauses, fmt.Sprintf("t.status = $%d", argPos))
 		args = append(args, opts.Status)
-		argID++
+		argPos++
 	}
 
 	if opts.Priority != "" {
-		whereConditions = append(whereConditions, fmt.Sprintf("t.priority = $%d", argID))
+		whereClauses = append(whereClauses, fmt.Sprintf("t.priority = $%d", argPos))
 		args = append(args, opts.Priority)
-		argID++
+		argPos++
 	}
 
-	whereClause := " WHERE " + fmt.Sprintf("%s", whereConditions[0])
-	for i := 1; i < len(whereConditions); i++ {
-		whereClause += " AND " + whereConditions[i]
+	if opts.CategoryID > 0 {
+		whereClauses = append(whereClauses, fmt.Sprintf("t.category_id = $%d", argPos))
+		args = append(args, opts.CategoryID)
+		argPos++
 	}
 
-	// Count total matching items for pagination
-	countQuery := "SELECT COUNT(*) FROM tickets t " + whereClause
+	if opts.Search != "" {
+		whereClauses = append(whereClauses, fmt.Sprintf("(t.title ILIKE $%d OR t.description ILIKE $%d)", argPos, argPos))
+		args = append(args, "%"+opts.Search+"%")
+		argPos++
+	}
+
+	whereSQL := ""
+	if len(whereClauses) > 0 {
+		whereSQL = "WHERE " + strings.Join(whereClauses, " AND ")
+	}
+
+	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM tickets t %s", whereSQL)
 	var totalCount int
-	_ = r.db.QueryRow(ctx, countQuery, args...).Scan(&totalCount)
+	err := r.db.QueryRow(ctx, countQuery, args...).Scan(&totalCount)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to count tickets: %w", err)
+	}
 
-	// Fetch page slice
 	query := fmt.Sprintf(`
 		SELECT 
 			t.id, t.ticket_number, t.title, t.description, t.category_id, 
 			COALESCE(c.name, '') as category_name,
 			t.priority, t.status, 
-			t.created_by, u1.name as created_by_name,
+			t.created_by, COALESCE(u1.name, 'Guest Customer') as created_by_name,
 			t.assigned_to, COALESCE(u2.name, '') as assigned_to_name,
+			t.auto_assigned,
 			t.created_at, t.updated_at, t.resolved_at
 		FROM tickets t
 		LEFT JOIN categories c ON t.category_id = c.id
-		INNER JOIN users u1 ON t.created_by = u1.id
+		LEFT JOIN users u1 ON t.created_by = u1.id
 		LEFT JOIN users u2 ON t.assigned_to = u2.id
 		%s
 		ORDER BY t.created_at DESC
 		LIMIT $%d OFFSET $%d
-	`, whereClause, argID, argID+1)
+	`, whereSQL, argPos, argPos+1)
 
 	args = append(args, opts.Limit, offset)
 
@@ -205,6 +238,7 @@ func (r *TicketRepository) ListTicketsFiltered(ctx context.Context, user *models
 			&t.CategoryName, &t.Priority, &t.Status,
 			&t.CreatedByID, &t.CreatedByName,
 			&t.AssignedToID, &t.AssignedToName,
+			&t.AutoAssigned,
 			&t.CreatedAt, &t.UpdatedAt, &t.ResolvedAt,
 		); err != nil {
 			return nil, 0, err
@@ -227,11 +261,7 @@ func (r *TicketRepository) UpdateTicketStatus(ctx context.Context, ticketID stri
 		resolvedAt = &now
 	}
 
-	query := `
-		UPDATE tickets 
-		SET status = $1, updated_at = now(), resolved_at = COALESCE($2, resolved_at)
-		WHERE id = $3
-	`
+	query := `UPDATE tickets SET status = $1, resolved_at = $2, updated_at = now() WHERE id = $3`
 	_, err = r.db.Exec(ctx, query, newStatus, resolvedAt, ticketID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update ticket status: %w", err)
@@ -239,6 +269,16 @@ func (r *TicketRepository) UpdateTicketStatus(ctx context.Context, ticketID stri
 
 	historyQuery := `INSERT INTO ticket_status_history (ticket_id, changed_by, old_status, new_status) VALUES ($1, $2, $3, $4)`
 	_, _ = r.db.Exec(ctx, historyQuery, ticketID, changedBy, currentTicket.Status, newStatus)
+
+	// Automatic Temporary Guest Account Deactivation on Ticket Closure
+	if newStatus == models.StatusClosed {
+		deactivateGuestQuery := `
+			UPDATE users 
+			SET is_active = false 
+			WHERE id = $1 AND is_temporary = true;
+		`
+		_, _ = r.db.Exec(ctx, deactivateGuestQuery, currentTicket.CreatedByID)
+	}
 
 	return r.GetTicketByID(ctx, ticketID)
 }
@@ -253,7 +293,7 @@ func (r *TicketRepository) UpdateTicketPriority(ctx context.Context, ticketID st
 }
 
 func (r *TicketRepository) UpdateTicketAssignee(ctx context.Context, ticketID string, assigneeID *string) (*models.Ticket, error) {
-	query := `UPDATE tickets SET assigned_to = $1, updated_at = now() WHERE id = $2`
+	query := `UPDATE tickets SET assigned_to = $1, auto_assigned = false, updated_at = now() WHERE id = $2`
 	_, err := r.db.Exec(ctx, query, assigneeID, ticketID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update assignee: %w", err)
@@ -322,8 +362,7 @@ func (r *TicketRepository) GetDashboardStats(ctx context.Context, user *models.U
 		SELECT c.name, COUNT(t.id) 
 		FROM categories c 
 		LEFT JOIN tickets t ON c.id = t.category_id 
-		GROUP BY c.name 
-		ORDER BY count DESC
+		GROUP BY c.name ORDER BY c.name ASC
 	`
 	cRows, err := r.db.Query(ctx, catQuery)
 	if err == nil {
@@ -336,14 +375,14 @@ func (r *TicketRepository) GetDashboardStats(ctx context.Context, user *models.U
 		cRows.Close()
 	}
 
-	// Agent Workload (Support & Admin)
+	// Agent Workload
 	agentQuery := `
-		SELECT u.id, u.name, COUNT(t.id) as open_count
-		FROM users u
+		SELECT u.id, u.name, COUNT(t.id) 
+		FROM users u 
 		LEFT JOIN tickets t ON u.id = t.assigned_to AND t.status IN ('open', 'in_progress')
 		WHERE u.role IN ('admin', 'support') AND u.is_active = true
-		GROUP BY u.id, u.name
-		ORDER BY open_count DESC
+		GROUP BY u.id, u.name 
+		ORDER BY u.name ASC
 	`
 	aRows, err := r.db.Query(ctx, agentQuery)
 	if err == nil {
@@ -354,17 +393,6 @@ func (r *TicketRepository) GetDashboardStats(ctx context.Context, user *models.U
 			}
 		}
 		aRows.Close()
-	}
-
-	// Average resolution interval
-	avgQuery := `
-		SELECT AVG(resolved_at - created_at)
-		FROM tickets
-		WHERE resolved_at IS NOT NULL
-	`
-	var avgDuration *time.Duration
-	if err := r.db.QueryRow(ctx, avgQuery).Scan(&avgDuration); err == nil && avgDuration != nil {
-		stats.AvgResolutionTime = fmt.Sprintf("%dh %dm", int(avgDuration.Hours()), int(avgDuration.Minutes())%60)
 	}
 
 	return stats, nil

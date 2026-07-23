@@ -36,6 +36,7 @@ type User struct {
 	PasswordHash string    `json:"-"`
 	Role         UserRole  `json:"role"`
 	IsActive     bool      `json:"is_active"`
+	IsTemporary  bool      `json:"is_temporary"`
 	CreatedAt    time.Time `json:"created_at"`
 }
 
@@ -57,6 +58,7 @@ type Ticket struct {
 	CreatedByName  string         `json:"created_by_name,omitempty"`
 	AssignedToID   *string        `json:"assigned_to_id,omitempty"`
 	AssignedToName *string        `json:"assigned_to_name,omitempty"`
+	AutoAssigned   bool           `json:"auto_assigned"`
 	CreatedAt      time.Time      `json:"created_at"`
 	UpdatedAt      time.Time      `json:"updated_at"`
 	ResolvedAt     *time.Time     `json:"resolved_at,omitempty"`
@@ -142,7 +144,6 @@ type UserNote struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-// Built-in ticMail External Email Notification Log
 type TicMailLog struct {
 	ID        string    `json:"id"`
 	Recipient string    `json:"recipient"`
