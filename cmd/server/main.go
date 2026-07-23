@@ -45,13 +45,15 @@ func main() {
 
 	// Initialize Repositories
 	userRepo := repository.NewUserRepository(dbPool)
+	ticketRepo := repository.NewTicketRepository(dbPool)
 
 	// Initialize Handlers
 	authHandler := handlers.NewAuthHandler(userRepo)
 	dashboardHandler := handlers.NewDashboardHandler()
+	ticketHandler := handlers.NewTicketHandler(ticketRepo)
 
 	// Build Router
-	r := router.New(sessionManager, authHandler, dashboardHandler)
+	r := router.New(sessionManager, authHandler, dashboardHandler, ticketHandler)
 
 	srv := &http.Server{
 		Addr:         ":" + cfg.Port,

@@ -1,0 +1,123 @@
+{{template "base.html" .}}
+
+{{define "title"}}Tickets — ticDesk{{end}}
+
+{{define "content"}}
+<div class="w-full max-w-6xl mx-auto py-6 space-y-6">
+
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-white tracking-tight">Support Tickets</h1>
+            <p class="text-sm text-slate-400 mt-1">Manage and track IT helpdesk service requests</p>
+        </div>
+        <a href="/tickets/new" class="px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-semibold rounded-xl shadow-lg shadow-indigo-500/25 transition-all text-sm flex items-center space-x-2 shrink-0 self-start sm:self-auto">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+            </svg>
+            <span>New Ticket</span>
+        </a>
+    </div>
+
+    <!-- Tickets Table Card -->
+    <div class="glass-card rounded-2xl border border-slate-800 overflow-hidden shadow-2xl">
+        {{if .Tickets}}
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm text-slate-300">
+                    <thead class="bg-slate-900/80 text-xs uppercase tracking-wider text-slate-400 border-b border-slate-800">
+                        <tr>
+                            <th class="py-3.5 px-5">Ref #</th>
+                            <th class="py-3.5 px-5">Subject</th>
+                            <th class="py-3.5 px-5">Category</th>
+                            <th class="py-3.5 px-5">Priority</th>
+                            <th class="py-3.5 px-5">Status</th>
+                            <th class="py-3.5 px-5">Assigned Agent</th>
+                            <th class="py-3.5 px-5 text-right">Created</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800/60">
+                        {{range .Tickets}}
+                            <tr class="hover:bg-slate-900/50 transition-colors duration-150 group">
+                                <td class="py-4 px-5 font-mono text-xs text-slate-400 group-hover:text-indigo-400 font-semibold">
+                                    #{{.TicketNumber}}
+                                </td>
+                                <td class="py-4 px-5 font-medium text-white max-w-xs truncate">
+                                    <a href="/tickets/{{.ID}}" class="hover:text-indigo-400 transition-colors">
+                                        {{.Title}}
+                                    </a>
+                                </td>
+                                <td class="py-4 px-5">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-800 text-slate-300 border border-slate-700">
+                                        {{.CategoryName}}
+                                    </span>
+                                </td>
+                                <td class="py-4 px-5">
+                                    {{if eq .Priority "high"}}
+                                        <span class="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span>
+                                            <span>High</span>
+                                        </span>
+                                    {{else if eq .Priority "medium"}}
+                                        <span class="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                                            <span>Medium</span>
+                                        </span>
+                                    {{else}}
+                                        <span class="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-800 text-slate-400 border border-slate-700">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                                            <span>Low</span>
+                                        </span>
+                                    {{end}}
+                                </td>
+                                <td class="py-4 px-5">
+                                    {{if eq .Status "open"}}
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                                            Open
+                                        </span>
+                                    {{else if eq .Status "in_progress"}}
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                                            In Progress
+                                        </span>
+                                    {{else if eq .Status "resolved"}}
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                            Resolved
+                                        </span>
+                                    {{else}}
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-800 text-slate-400 border border-slate-700">
+                                            Closed
+                                        </span>
+                                    {{end}}
+                                </td>
+                                <td class="py-4 px-5 text-xs text-slate-400">
+                                    {{if .AssignedToName}}
+                                        {{.AssignedToName}}
+                                    {{else}}
+                                        <span class="text-slate-600 italic">Unassigned</span>
+                                    {{end}}
+                                </td>
+                                <td class="py-4 px-5 text-right text-xs text-slate-500">
+                                    {{.CreatedAt.Format "Jan 02, 15:04"}}
+                                </td>
+                            </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+            </div>
+        {{else}}
+            <div class="text-center py-16 px-4">
+                <div class="w-12 h-12 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center mx-auto mb-4 text-slate-500">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+                    </svg>
+                </div>
+                <h3 class="text-base font-semibold text-slate-300">No tickets found</h3>
+                <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">Get started by creating your first IT support ticket</p>
+                <a href="/tickets/new" class="inline-flex items-center space-x-2 mt-5 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-lg shadow-indigo-500/20 transition-all">
+                    <span>Create Ticket</span>
+                </a>
+            </div>
+        {{end}}
+    </div>
+
+</div>
+{{end}}

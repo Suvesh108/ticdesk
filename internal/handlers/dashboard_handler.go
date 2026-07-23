@@ -2,26 +2,15 @@ package handlers
 
 import (
 	"html/template"
-	"log"
 	"net/http"
 	"ticDesk/internal/auth"
 	"ticDesk/internal/models"
 )
 
-type DashboardHandler struct {
-	tmpl *template.Template
-}
+type DashboardHandler struct{}
 
 func NewDashboardHandler() *DashboardHandler {
-	tmpl, err := template.ParseFiles(
-		"web/templates/layouts/base.html",
-		"web/templates/pages/dashboard.html",
-	)
-	if err != nil {
-		log.Printf("Warning: error parsing dashboard template: %v", err)
-	}
-
-	return &DashboardHandler{tmpl: tmpl}
+	return &DashboardHandler{}
 }
 
 type DashboardData struct {
@@ -35,9 +24,18 @@ func (h *DashboardHandler) ShowDashboard(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	tmpl, err := template.ParseFiles(
+		"web/templates/layouts/base.html",
+		"web/templates/pages/dashboard.html",
+	)
+	if err != nil {
+		http.Error(w, "Template Error: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	data := DashboardData{User: user}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := h.tmpl.ExecuteTemplate(w, "dashboard.html", data); err != nil {
+	if err := tmpl.ExecuteTemplate(w, "dashboard.html", data); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }

@@ -14,6 +14,7 @@ func New(
 	sessionManager *scs.SessionManager,
 	authHandler *handlers.AuthHandler,
 	dashboardHandler *handlers.DashboardHandler,
+	ticketHandler *handlers.TicketHandler,
 ) http.Handler {
 	r := chi.NewRouter()
 
@@ -42,7 +43,14 @@ func New(
 	// Protected Routes
 	r.Group(func(r chi.Router) {
 		r.Use(auth.RequireAuth)
+
 		r.Get("/dashboard", dashboardHandler.ShowDashboard)
+
+		// Tickets Routes
+		r.Get("/tickets", ticketHandler.ShowTicketList)
+		r.Get("/tickets/new", ticketHandler.ShowNewTicket)
+		r.Post("/tickets", ticketHandler.ProcessCreateTicket)
+		r.Get("/tickets/{id}", ticketHandler.ShowTicketDetail)
 	})
 
 	return r

@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"html/template"
-	"log"
 	"net/http"
 	"strings"
 	"ticDesk/internal/auth"
@@ -12,23 +11,27 @@ import (
 
 type AuthHandler struct {
 	userRepo *repository.UserRepository
-	tmpl     *template.Template
 }
 
 func NewAuthHandler(userRepo *repository.UserRepository) *AuthHandler {
+	return &AuthHandler{
+		userRepo: userRepo,
+	}
+}
+
+func renderAuthPage(w http.ResponseWriter, page string, data interface{}) {
 	tmpl, err := template.ParseFiles(
 		"web/templates/layouts/base.html",
-		"web/templates/pages/login.html",
-		"web/templates/pages/register.html",
+		"web/templates/pages/"+page,
 		"web/templates/partials/toast.html",
 	)
 	if err != nil {
-		log.Printf("Warning: error parsing template files in AuthHandler: %v", err)
+		http.Error(w, "Template Error: "+err.Error(), http.StatusInternalServerError)
+		return
 	}
-
-	return &AuthHandler{
-		userRepo: userRepo,
-		tmpl:     tmpl,
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if err := tmpl.ExecuteTemplate(w, page, data); err != nil {
+		http.Error(w, "Render Error: "+err.Error(), http.StatusInternalServerError)
 	}
 }
 
@@ -45,10 +48,7 @@ func (h *AuthHandler) ShowLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := AuthData{}
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := h.tmpl.ExecuteTemplate(w, "login.html", data); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	renderAuthPage(w, "login.html", data)
 }
 
 func (h *AuthHandler) ProcessLogin(w http.ResponseWriter, r *http.Request) {
@@ -62,14 +62,12 @@ func (h *AuthHandler) ProcessLogin(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.userRepo.GetUserByEmail(r.Context(), email)
 	if err != nil || !auth.CheckPasswordHash(password, user.PasswordHash) {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.WriteHeader(http.StatusUnauthorized)
 		data := AuthData{Email: email, Error: "Invalid email or password"}
-		_ = h.tmpl.ExecuteTemplate(w, "login.html", data)
+		renderAuthPage(w, "login.html", data)
 		return
 	}
 
-	// Session renew & set
 	if err := auth.SessionManager.RenewToken(r.Context()); err != nil {
 		http.Error(w, "Session error", http.StatusInternalServerError)
 		return
@@ -90,10 +88,7 @@ func (h *AuthHandler) ShowRegister(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := AuthData{}
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := h.tmpl.ExecuteTemplate(w, "register.html", data); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	renderAuthPage(w, "register.html", data)
 }
 
 func (h *AuthHandler) ProcessRegister(w http.ResponseWriter, r *http.Request) {
@@ -108,10 +103,9 @@ func (h *AuthHandler) ProcessRegister(w http.ResponseWriter, r *http.Request) {
 	roleStr := r.FormValue("role")
 
 	if name == "" || email == "" || len(password) < 6 {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.WriteHeader(http.StatusBadRequest)
 		data := AuthData{Error: "Please provide valid registration details (password min 6 chars)"}
-		_ = h.tmpl.ExecuteTemplate(w, "register.html", data)
+		renderAuthPage(w, "register.html", data)
 		return
 	}
 
@@ -130,10 +124,9 @@ func (h *AuthHandler) ProcessRegister(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.userRepo.CreateUser(r.Context(), name, email, hashedPassword, role)
 	if err != nil {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.WriteHeader(http.StatusConflict)
 		data := AuthData{Error: "An account with this email already exists"}
-		_ = h.tmpl.ExecuteTemplate(w, "register.html", data)
+		renderAuthPage(w, "register.html", data)
 		return
 	}
 
