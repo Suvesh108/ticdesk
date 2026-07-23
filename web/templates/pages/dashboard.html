@@ -1,6 +1,6 @@
 {{template "base.html" .}}
 
-{{define "title"}}Today Overview — Outlook 365{{end}}
+{{define "title"}}Dashboard — Outlook 365{{end}}
 
 {{define "content"}}
 <div class="space-y-6">
@@ -9,10 +9,14 @@
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#292827]">
         <div>
             <div class="inline-flex items-center space-x-1.5 px-2 py-0.5 rounded bg-sky-500/10 border border-sky-500/20 text-sky-400 text-[10px] font-bold uppercase tracking-wider mb-1">
-                <span>Outlook 365 Today</span>
+                <span>{{if eq .User.Role "customer"}}Customer Portal{{else if eq .User.Role "support"}}Support Operations{{else}}Admin Workstation{{end}}</span>
             </div>
-            <h1 class="text-xl font-bold text-white tracking-tight">Helpdesk Workstation & Today Overview</h1>
-            <p class="text-xs text-slate-400 mt-0.5">Real-time ticket queues, SLA metrics, schedule events, and agent workload</p>
+            <h1 class="text-xl font-bold text-white tracking-tight">
+                {{if eq .User.Role "customer"}}My Helpdesk Dashboard{{else if eq .User.Role "support"}}Support Queue & Shift Overview{{else}}Admin Executive Dashboard{{end}}
+            </h1>
+            <p class="text-xs text-slate-400 mt-0.5">
+                {{if eq .User.Role "customer"}}Track your active service requests and support ticket resolutions{{else}}Real-time ticket queues, SLA turnaround metrics, and agent workloads{{end}}
+            </p>
         </div>
 
         <div class="flex items-center space-x-2">
@@ -20,47 +24,49 @@
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                 </svg>
-                <span>New Ticket</span>
+                <span>Submit New Ticket</span>
             </a>
-            <a href="/calendar" class="px-3 py-1.5 bg-[#252423] hover:bg-[#2d2c2b] border border-[#323130] text-slate-300 text-xs font-semibold rounded transition-colors">
-                View Calendar
-            </a>
+            {{if or (eq .User.Role "admin") (eq .User.Role "support")}}
+                <a href="/calendar" class="px-3 py-1.5 bg-[#252423] hover:bg-[#2d2c2b] border border-[#323130] text-slate-300 text-xs font-semibold rounded transition-colors">
+                    Shift Schedule
+                </a>
+            {{end}}
         </div>
     </div>
 
-    <!-- 4 Outlook KPI Summary Cards -->
+    <!-- KPI Cards Grid -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <!-- Open Tickets Card -->
+        <!-- Open Count -->
         <div class="outlook-card outlook-card-hover p-4">
             <div class="flex items-center justify-between mb-2">
                 <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Open Tickets</span>
                 <span class="w-2 h-2 rounded-full bg-sky-400"></span>
             </div>
             <div class="text-2xl font-extrabold text-white">{{.Stats.OpenCount}}</div>
-            <p class="text-[10px] text-slate-400 mt-1">Awaiting support response</p>
+            <p class="text-[10px] text-slate-400 mt-1">Awaiting response</p>
         </div>
 
-        <!-- In Progress Card -->
+        <!-- In Progress Count -->
         <div class="outlook-card outlook-card-hover p-4">
             <div class="flex items-center justify-between mb-2">
                 <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">In Progress</span>
                 <span class="w-2 h-2 rounded-full bg-amber-400"></span>
             </div>
             <div class="text-2xl font-extrabold text-white">{{.Stats.InProgressCount}}</div>
-            <p class="text-[10px] text-slate-400 mt-1">Under active investigation</p>
+            <p class="text-[10px] text-slate-400 mt-1">Under investigation</p>
         </div>
 
-        <!-- Resolved Card -->
+        <!-- Resolved Count -->
         <div class="outlook-card outlook-card-hover p-4">
             <div class="flex items-center justify-between mb-2">
                 <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Resolved</span>
                 <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
             </div>
             <div class="text-2xl font-extrabold text-white">{{.Stats.ResolvedCount}}</div>
-            <p class="text-[10px] text-slate-400 mt-1">Completed issues</p>
+            <p class="text-[10px] text-slate-400 mt-1">Completed requests</p>
         </div>
 
-        <!-- Avg SLA Resolution -->
+        <!-- SLA Avg Resolution -->
         <div class="outlook-card outlook-card-hover p-4">
             <div class="flex items-center justify-between mb-2">
                 <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Avg Resolution</span>
@@ -72,13 +78,15 @@
     </div>
 
     <!-- Main Content Layout -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 {{if eq .User.Role "customer"}}lg:grid-cols-1{{else}}lg:grid-cols-3{{end}} gap-6">
         
-        <!-- Left (2/3): Recent Inbox Tickets -->
-        <div class="lg:col-span-2 outlook-card p-5 space-y-4">
+        <!-- Left (2/3 or full): Tickets Inbox Table -->
+        <div class="{{if eq .User.Role "customer"}}w-full{{else}}lg:col-span-2{{end}} outlook-card p-5 space-y-4">
             <div class="flex items-center justify-between pb-2 border-b border-[#292827]">
-                <h2 class="text-xs font-bold uppercase tracking-wider text-slate-300">Inbox Active Tickets</h2>
-                <a href="/tickets" class="text-xs text-sky-400 hover:underline">Open Inbox →</a>
+                <h2 class="text-xs font-bold uppercase tracking-wider text-slate-300">
+                    {{if eq .User.Role "customer"}}My Submitted Tickets{{else}}Recent Active Tickets{{end}}
+                </h2>
+                <a href="/tickets" class="text-xs text-sky-400 hover:underline">View All →</a>
             </div>
 
             {{if .Tickets}}
@@ -93,6 +101,7 @@
                             </div>
 
                             <div class="flex items-center space-x-2 shrink-0">
+                                <span class="text-[11px] text-slate-400 hidden sm:inline">{{.CategoryName}}</span>
                                 <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase {{if eq .Status "open"}}bg-sky-500/10 text-sky-400 border border-sky-500/20{{else if eq .Status "in_progress"}}bg-amber-500/10 text-amber-400 border border-amber-500/20{{else}}bg-emerald-500/10 text-emerald-400 border border-emerald-500/20{{end}}">
                                     {{.Status}}
                                 </span>
@@ -102,12 +111,13 @@
                 </div>
             {{else}}
                 <div class="text-center py-8 border border-dashed border-[#292827] rounded bg-[#1b1a19]">
-                    <p class="text-xs text-slate-400">No active tickets found.</p>
+                    <p class="text-xs text-slate-400">No tickets found in your queue.</p>
                 </div>
             {{end}}
         </div>
 
-        <!-- Right (1/3): Quick Calendar & Agent Workload -->
+        {{if ne .User.Role "customer"}}
+        <!-- Right (1/3): Staff & Admin Sidebars -->
         <div class="space-y-6">
             <!-- Categories Card -->
             <div class="outlook-card p-5 space-y-3">
@@ -127,7 +137,7 @@
                 </div>
             </div>
 
-            <!-- Support Agent Shift Queue -->
+            <!-- Support Agent Shift Workload -->
             <div class="outlook-card p-5 space-y-3">
                 <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 pb-2 border-b border-[#292827]">Support Shift Workload</h3>
                 <div class="space-y-2">
@@ -142,6 +152,7 @@
                 </div>
             </div>
         </div>
+        {{end}}
 
     </div>
 

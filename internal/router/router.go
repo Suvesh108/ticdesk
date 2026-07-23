@@ -53,27 +53,30 @@ func New(
 		r.Get("/dashboard", dashboardHandler.ShowDashboard)
 		r.Get("/dashboard/stats.json", dashboardHandler.GetStatsJSON)
 
-		// Tickets Routes
+		// Tickets Routes (Role-Filtered inside repository queries)
 		r.Get("/tickets", ticketHandler.ShowTicketList)
 		r.Get("/tickets/new", ticketHandler.ShowNewTicket)
 		r.Post("/tickets", ticketHandler.ProcessCreateTicket)
 		r.Get("/tickets/{id}", ticketHandler.ShowTicketDetail)
 
-		// Outlook Calendar Routes
-		r.Get("/calendar", calendarHandler.RenderCalendar)
-		r.Post("/calendar/events", calendarHandler.CreateEvent)
-		r.Post("/calendar/events/{id}/delete", calendarHandler.DeleteEvent)
+		// Staff & Admin Only Routes (Calendar & Notes)
+		r.Group(func(r chi.Router) {
+			r.Use(auth.RequireRole(models.RoleAdmin, models.RoleSupport))
 
-		// Outlook Notes Routes
-		r.Get("/notes", noteHandler.RenderNotes)
-		r.Post("/notes", noteHandler.CreateNote)
-		r.Post("/notes/{id}/pin", noteHandler.TogglePin)
-		r.Post("/notes/{id}/delete", noteHandler.DeleteNote)
+			r.Get("/calendar", calendarHandler.RenderCalendar)
+			r.Post("/calendar/events", calendarHandler.CreateEvent)
+			r.Post("/calendar/events/{id}/delete", calendarHandler.DeleteEvent)
 
-		// HTMX Partial Mutation Routes
-		r.Patch("/tickets/{id}/status", ticketHandler.UpdateStatus)
-		r.Patch("/tickets/{id}/priority", ticketHandler.UpdatePriority)
-		r.Patch("/tickets/{id}/assign", ticketHandler.UpdateAssignee)
+			r.Get("/notes", noteHandler.RenderNotes)
+			r.Post("/notes", noteHandler.CreateNote)
+			r.Post("/notes/{id}/pin", noteHandler.TogglePin)
+			r.Post("/notes/{id}/delete", noteHandler.DeleteNote)
+
+			// HTMX Partial Mutation Routes
+			r.Patch("/tickets/{id}/status", ticketHandler.UpdateStatus)
+			r.Patch("/tickets/{id}/priority", ticketHandler.UpdatePriority)
+			r.Patch("/tickets/{id}/assign", ticketHandler.UpdateAssignee)
+		})
 
 		// Comments & Attachments Routes
 		r.Get("/tickets/{id}/comments", commentHandler.GetComments)
