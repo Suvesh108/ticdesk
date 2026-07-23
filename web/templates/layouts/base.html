@@ -170,45 +170,45 @@
         <!-- 1. Far Left App Rail (Width: 50px) -->
         <nav class="w-12 outlook-app-rail hidden md:flex flex-col items-center py-4 space-y-5 shrink-0 z-30">
             <!-- Today / Overview -->
-            <a href="/dashboard" class="p-2 rounded text-slate-400 hover:text-white hover:bg-[#252423] transition-colors" title="Today Overview">
+            <a href="/dashboard" class="p-2 rounded transition-colors {{if eq .Title "Dashboard — ticDesk"}}bg-[#252423] text-white border-l-2 border-sky-400{{else}}text-slate-400 hover:text-white hover:bg-[#252423]{{end}}" title="Today Overview">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
                 </svg>
             </a>
 
             <!-- Mail / Tickets -->
-            <a href="/tickets" class="p-2 rounded text-slate-400 hover:text-white hover:bg-[#252423] transition-colors" title="Mail & Support Tickets">
+            <a href="/tickets" class="p-2 rounded transition-colors {{if eq .Title "Ticket Queue — ticDesk"}}bg-[#252423] text-sky-400 border-l-2 border-sky-400{{else}}text-slate-400 hover:text-white hover:bg-[#252423]{{end}}" title="Mail & Support Tickets">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
                 </svg>
             </a>
 
             {{if or (eq .User.Role "admin") (eq .User.Role "support")}}
             <!-- Calendar & Schedule -->
-            <a href="/calendar" class="p-2 rounded text-slate-400 hover:text-white hover:bg-[#252423] transition-colors" title="Calendar & Shift Schedule">
+            <a href="/calendar" class="p-2 rounded transition-colors {{if eq .Title "Schedule Calendar — ticDesk"}}bg-[#252423] text-emerald-400 border-l-2 border-emerald-400{{else}}text-slate-400 hover:text-white hover:bg-[#252423]{{end}}" title="Calendar & Shift Schedule">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                 </svg>
             </a>
 
             <!-- Notes & Scratchpad -->
-            <a href="/notes" class="p-2 rounded text-slate-400 hover:text-white hover:bg-[#252423] transition-colors" title="Personal & Shift Notes">
+            <a href="/notes" class="p-2 rounded transition-colors {{if eq .Title "Shift Notes — ticDesk"}}bg-[#252423] text-amber-400 border-l-2 border-amber-400{{else}}text-slate-400 hover:text-white hover:bg-[#252423]{{end}}" title="Personal & Shift Notes">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                 </svg>
             </a>
 
             <!-- Built-in ticMail Alert Inspector -->
-            <a href="/ticmail" class="p-2 rounded text-sky-400 hover:bg-[#252423] transition-colors" title="ticMail External Email System Inspector">
+            <a href="/ticmail" class="p-2 rounded transition-colors {{if eq .Title "ticMail Alert — ticDesk"}}bg-[#252423] text-violet-400 border-l-2 border-violet-400{{else}}text-slate-400 hover:text-white hover:bg-[#252423]{{end}}" title="ticMail External Email System Inspector">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v15.5A2.5 2.5 0 0018.5 15a2.5 2.5 0 002.5-2.5V12a9 9 0 10-9 9"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
                 </svg>
             </a>
             {{end}}
 
             {{if eq .User.Role "admin"}}
             <!-- User Management Directory -->
-            <a href="/admin/users" class="p-2 rounded text-amber-400 hover:bg-[#252423] transition-colors" title="Admin User Directory">
+            <a href="/admin/users" class="p-2 rounded transition-colors {{if eq .Title "User Management — ticDesk"}}bg-[#252423] text-amber-400 border-l-2 border-amber-400{{else}}text-amber-400 hover:bg-[#252423]{{end}}" title="Admin User Directory">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
                 </svg>
@@ -223,7 +223,7 @@
             <div class="space-y-1">
                 <div class="px-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">Favorites</div>
                 
-                <a href="/tickets" class="flex items-center justify-between px-2.5 py-1.5 rounded text-xs font-semibold text-slate-300 hover:text-white hover:bg-[#252423]">
+                <a href="/tickets" class="flex items-center justify-between px-2.5 py-1.5 rounded text-xs font-semibold transition-colors {{if eq .Title "Ticket Queue — ticDesk"}}bg-[#252423] text-sky-400 border-l-2 border-sky-400{{else}}text-slate-300 hover:text-white hover:bg-[#252423]{{end}}">
                     <span class="flex items-center space-x-2">
                         <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
@@ -233,7 +233,7 @@
                 </a>
 
                 {{if or (eq .User.Role "admin") (eq .User.Role "support")}}
-                <a href="/calendar" class="flex items-center justify-between px-2.5 py-1.5 rounded text-xs font-semibold text-slate-300 hover:text-white hover:bg-[#252423]">
+                <a href="/calendar" class="flex items-center justify-between px-2.5 py-1.5 rounded text-xs font-semibold transition-colors {{if eq .Title "Schedule Calendar — ticDesk"}}bg-[#252423] text-emerald-400 border-l-2 border-emerald-400{{else}}text-slate-300 hover:text-white hover:bg-[#252423]{{end}}">
                     <span class="flex items-center space-x-2">
                         <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
@@ -242,7 +242,7 @@
                     </span>
                 </a>
 
-                <a href="/notes" class="flex items-center justify-between px-2.5 py-1.5 rounded text-xs font-semibold text-slate-300 hover:text-white hover:bg-[#252423]">
+                <a href="/notes" class="flex items-center justify-between px-2.5 py-1.5 rounded text-xs font-semibold transition-colors {{if eq .Title "Shift Notes — ticDesk"}}bg-[#252423] text-amber-400 border-l-2 border-amber-400{{else}}text-slate-300 hover:text-white hover:bg-[#252423]{{end}}">
                     <span class="flex items-center space-x-2">
                         <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
@@ -251,9 +251,9 @@
                     </span>
                 </a>
 
-                <a href="/ticmail" class="flex items-center justify-between px-2.5 py-1.5 rounded text-xs font-semibold text-sky-400 hover:bg-[#252423]">
+                <a href="/ticmail" class="flex items-center justify-between px-2.5 py-1.5 rounded text-xs font-semibold transition-colors {{if eq .Title "ticMail Alert — ticDesk"}}bg-[#252423] text-violet-400 border-l-2 border-violet-400{{else}}text-slate-300 hover:text-white hover:bg-[#252423]{{end}}">
                     <span class="flex items-center space-x-2">
-                        <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-4 h-4 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
                         </svg>
                         <span>ticMail Alerts</span>
