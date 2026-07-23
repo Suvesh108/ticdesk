@@ -41,12 +41,27 @@ func (h *NoteHandler) RenderNotes(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	tmpl, err := template.New("").Funcs(template.FuncMap{
+		"sub": func(a, b int) int { return a - b },
+		"add": func(a, b int) int { return a + b },
+		"mul": func(a, b int) int { return a * b },
+	}).ParseFiles(
+		"web/templates/layouts/base.html",
+		"web/templates/pages/notes.html",
+	)
+	if err != nil {
+		http.Error(w, "Template error: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	data := map[string]interface{}{
+		"Title":       "Shift Notes — ticDesk",
 		"User":        user,
 		"Notes":       notes,
 		"PinnedNotes": pinnedNotes,
 	}
-	h.tmpl.ExecuteTemplate(w, "notes.html", data)
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	_ = tmpl.ExecuteTemplate(w, "base.html", data)
 }
 
 func (h *NoteHandler) CreateNote(w http.ResponseWriter, r *http.Request) {

@@ -49,11 +49,26 @@ func (h *TicMailHandler) RenderTicMail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := map[string]interface{}{
-		"User": user,
-		"Logs": logs,
+	tmpl, err := template.New("").Funcs(template.FuncMap{
+		"sub": func(a, b int) int { return a - b },
+		"add": func(a, b int) int { return a + b },
+		"mul": func(a, b int) int { return a * b },
+	}).ParseFiles(
+		"web/templates/layouts/base.html",
+		"web/templates/pages/ticmail.html",
+	)
+	if err != nil {
+		http.Error(w, "Template error: "+err.Error(), http.StatusInternalServerError)
+		return
 	}
-	h.tmpl.ExecuteTemplate(w, "ticmail.html", data)
+
+	data := map[string]interface{}{
+		"Title": "ticMail Alert — ticDesk",
+		"User":  user,
+		"Logs":  logs,
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	_ = tmpl.ExecuteTemplate(w, "base.html", data)
 }
 
 func (h *TicMailHandler) ClearTicMail(w http.ResponseWriter, r *http.Request) {

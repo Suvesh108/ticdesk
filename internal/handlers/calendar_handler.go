@@ -33,11 +33,26 @@ func (h *CalendarHandler) RenderCalendar(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	tmpl, err := template.New("").Funcs(template.FuncMap{
+		"sub": func(a, b int) int { return a - b },
+		"add": func(a, b int) int { return a + b },
+		"mul": func(a, b int) int { return a * b },
+	}).ParseFiles(
+		"web/templates/layouts/base.html",
+		"web/templates/pages/calendar.html",
+	)
+	if err != nil {
+		http.Error(w, "Template error: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	data := map[string]interface{}{
+		"Title":  "Schedule Calendar — ticDesk",
 		"User":   user,
 		"Events": events,
 	}
-	h.tmpl.ExecuteTemplate(w, "calendar.html", data)
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	_ = tmpl.ExecuteTemplate(w, "base.html", data)
 }
 
 func (h *CalendarHandler) CreateEvent(w http.ResponseWriter, r *http.Request) {

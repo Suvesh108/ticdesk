@@ -26,6 +26,7 @@ func NewTicketHandler(repo *repository.TicketRepository, emailService *services.
 }
 
 type TicketListData struct {
+	Title      string
 	User       *models.User
 	Tickets    []models.Ticket
 	Categories []models.Category
@@ -78,6 +79,7 @@ func (h *TicketHandler) ShowTicketList(w http.ResponseWriter, r *http.Request) {
 	categories, _ := h.repo.GetCategories(r.Context())
 
 	data := TicketListData{
+		Title:      "Ticket Queue — ticDesk",
 		User:       user,
 		Tickets:    tickets,
 		Categories: categories,
@@ -96,7 +98,20 @@ func (h *TicketHandler) ShowTicketList(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := h.tmpl.ExecuteTemplate(w, "ticket_list.html", data); err != nil {
+	tmpl, err := template.New("").Funcs(template.FuncMap{
+		"sub": func(a, b int) int { return a - b },
+		"add": func(a, b int) int { return a + b },
+		"mul": func(a, b int) int { return a * b },
+	}).ParseFiles(
+		"web/templates/layouts/base.html",
+		"web/templates/pages/ticket_list.html",
+		"web/templates/partials/ticket_table.html",
+	)
+	if err != nil {
+		http.Error(w, "Template Error: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if err := tmpl.ExecuteTemplate(w, "base.html", data); err != nil {
 		http.Error(w, "Template Error: "+err.Error(), http.StatusInternalServerError)
 	}
 }

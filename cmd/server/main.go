@@ -60,12 +60,13 @@ func main() {
 	emailService := services.NewEmailService("localhost", "1025", "notifications@ticdesk.com", ticmailRepo)
 	emailService.StartWorker(ctx)
 
-	// Parse Templates
-	tmpl := template.Must(template.New("").Funcs(template.FuncMap{
+	// Create baseFuncMap for template rendering
+	baseFuncs := template.FuncMap{
 		"sub": func(a, b int) int { return a - b },
 		"add": func(a, b int) int { return a + b },
 		"mul": func(a, b int) int { return a * b },
-	}).ParseGlob("web/templates/**/*.html"))
+	}
+	tmpl := template.New("").Funcs(baseFuncs)
 
 	// Initialize Handlers
 	authHandler := handlers.NewAuthHandler(userRepo)

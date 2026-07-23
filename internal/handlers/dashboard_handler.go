@@ -36,19 +36,24 @@ func (h *DashboardHandler) ShowDashboard(w http.ResponseWriter, r *http.Request)
 		recentTickets = recentTickets[:5]
 	}
 
-	tmpl, err := template.ParseFiles(
+	tmpl, err := template.New("").Funcs(template.FuncMap{
+		"sub": func(a, b int) int { return a - b },
+		"add": func(a, b int) int { return a + b },
+		"mul": func(a, b int) int { return a * b },
+	}).ParseFiles(
 		"web/templates/layouts/base.html",
 		"web/templates/pages/dashboard.html",
 	)
 	if err != nil {
-		http.Error(w, "Template Error: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Template error: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	data := DashboardData{
-		User:    user,
-		Stats:   stats,
-		Tickets: recentTickets,
+	data := map[string]interface{}{
+		"Title":   "Dashboard — ticDesk",
+		"User":    user,
+		"Stats":   stats,
+		"Tickets": recentTickets,
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	_ = tmpl.ExecuteTemplate(w, "base.html", data)
