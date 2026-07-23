@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{block "title" .}}Outlook 365 — ticDesk Helpdesk{{end}}</title>
+    <title>{{block "title" .}}ticDesk — Helpdesk Platform{{end}}</title>
     
-    <meta name="description" content="Microsoft Outlook 365 styled IT Helpdesk, ticMail built-in email engine, and schedule management platform.">
+    <meta name="description" content="ticDesk is a high-performance IT helpdesk, ticMail built-in email engine, and schedule management platform.">
 
     <!-- Fonts: Segoe UI & Inter from Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@300;400;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@300;400;600;700&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
     <!-- Tailwind CSS (CDN) & HTMX v2 & Alpine.js -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -111,12 +111,14 @@
                 </svg>
             </button>
 
-            <!-- Microsoft 365 Logo Icon -->
-            <a href="/dashboard" class="flex items-center space-x-2.5">
-                <div class="w-7 h-7 bg-sky-600 rounded flex items-center justify-center font-bold text-white text-xs shadow-sm">
-                    365
+            <!-- Brand Logo: ticDesk -->
+            <a href="/dashboard" class="flex items-center space-x-2.5 group">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-sky-600 via-sky-500 to-indigo-500 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform duration-200">
+                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
                 </div>
-                <span class="text-sm font-bold text-white tracking-tight">Outlook <span class="text-sky-400 font-normal">ticDesk</span></span>
+                <span class="text-base font-extrabold text-white tracking-tight">tic<span class="text-sky-400">Desk</span></span>
             </a>
         </div>
 
@@ -299,11 +301,11 @@
 
             <!-- Footer -->
             <footer class="border-t border-[#292827] bg-[#11100f] py-3 px-6 text-xs text-slate-400 flex items-center justify-between">
-                <p>&copy; 2026 ticDesk Inc. Microsoft Outlook 365 Enterprise Workstation with ticMail.</p>
+                <p>&copy; 2026 ticDesk Inc. All rights reserved.</p>
                 <div class="flex items-center space-x-3 text-[11px]">
                     <span class="inline-flex items-center space-x-1">
                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                        <span class="text-slate-400">ticMail Active</span>
+                        <span class="text-slate-400">ticDesk Engine Active</span>
                     </span>
                 </div>
             </footer>
