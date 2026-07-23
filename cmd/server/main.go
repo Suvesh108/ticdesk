@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -10,10 +9,13 @@ import (
 	"syscall"
 	"time"
 
+	"ticDesk/internal/auth"
 	"ticDesk/internal/config"
+	"ticDesk/internal/handlers"
+	"ticDesk/internal/repository"
+	"ticDesk/internal/router"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func main() {
@@ -22,21 +24,34 @@ func main() {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	r := chi.NewRouter()
+	// Connect to PostgreSQL database pool
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 
-	r.Use(middleware.Logger)
-	r.Use(middleware.Recoverer)
-	r.Use(middleware.RequestID)
+	dbPool, err := pgxpool.New(ctx, cfg.DatabaseURL())
+	if err != nil {
+		log.Fatalf("Unable to connect to database: %v", err)
+	}
+	defer dbPool.Close()
 
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		fmt.Fprintf(w, "<h1>ticDesk Server Running</h1><p>Status: Healthy</p>")
-	})
+	if err := dbPool.Ping(ctx); err != nil {
+		log.Printf("Warning: Database ping failed: %v", err)
+	} else {
+		log.Println("Successfully connected to PostgreSQL database")
+	}
 
-	r.Get("/healthz", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
-	})
+	// Initialize Session Manager
+	sessionManager := auth.InitSessionManager(cfg.SessionSecret)
+
+	// Initialize Repositories
+	userRepo := repository.NewUserRepository(dbPool)
+
+	// Initialize Handlers
+	authHandler := handlers.NewAuthHandler(userRepo)
+	dashboardHandler := handlers.NewDashboardHandler()
+
+	// Build Router
+	r := router.New(sessionManager, authHandler, dashboardHandler)
 
 	srv := &http.Server{
 		Addr:         ":" + cfg.Port,
@@ -58,10 +73,10 @@ func main() {
 	<-quit
 	log.Println("Shutting down ticDesk server...")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer shutdownCancel()
 
-	if err := srv.Shutdown(ctx); err != nil {
+	if err := srv.Shutdown(shutdownCtx); err != nil {
 		log.Fatalf("Server forced to shutdown: %v", err)
 	}
 
