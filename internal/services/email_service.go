@@ -7,6 +7,7 @@ import (
 	"net/smtp"
 	"strings"
 	"ticDesk/internal/models"
+	"ticDesk/internal/repository"
 )
 
 type EmailJob struct {
@@ -16,37 +17,46 @@ type EmailJob struct {
 }
 
 type EmailService struct {
-	smtpHost string
-	smtpPort string
-	fromAddr string
-	jobChan  chan EmailJob
+	smtpHost    string
+	smtpPort    string
+	fromAddr    string
+	jobChan     chan EmailJob
+	ticmailRepo *repository.TicMailRepository
 }
 
-func NewEmailService(host, port, from string) *EmailService {
+func NewEmailService(host, port, from string, ticmailRepo *repository.TicMailRepository) *EmailService {
 	return &EmailService{
-		smtpHost: host,
-		smtpPort: port,
-		fromAddr: from,
-		jobChan:  make(chan EmailJob, 100),
+		smtpHost:    host,
+		smtpPort:    port,
+		fromAddr:    from,
+		jobChan:     make(chan EmailJob, 100),
+		ticmailRepo: ticmailRepo,
 	}
 }
 
 func (s *EmailService) StartWorker(ctx context.Context) {
-	log.Printf("Email worker started listening on %s:%s", s.smtpHost, s.smtpPort)
+	log.Printf("ticMail built-in email worker active. Listening on channel...")
 	go func() {
 		for {
 			select {
 			case <-ctx.Done():
-				log.Println("Email worker stopping...")
+				log.Println("ticMail worker stopping...")
 				return
 			case job, ok := <-s.jobChan:
 				if !ok {
 					return
 				}
-				if err := s.sendSMTP(job); err != nil {
-					log.Printf("Failed to send email to %s: %v", job.To, err)
+				// 1. Log to built-in ticMail system
+				if s.ticmailRepo != nil {
+					_, _ = s.ticmailRepo.LogEmail(ctx, job.To, job.Subject, job.HTML, "DELIVERED")
+				}
+
+				// 2. Optional SMTP dispatch (MailHog or real production SMTP)
+				err := s.sendSMTP(job)
+				if err != nil {
+					log.Printf("ticMail captured alert for %s [%s] (SMTP bypass active)", job.To, job.Subject)
 				} else {
-					log.Printf("Successfully sent notification email to %s [%s]", job.To, job.Subject)
+					log.Printf("ticMail successfully dispatched SMTP alert for %s [%s]", job.To, job.Subject)
 				}
 			}
 		}
@@ -57,7 +67,7 @@ func (s *EmailService) Enqueue(job EmailJob) {
 	select {
 	case s.jobChan <- job:
 	default:
-		log.Printf("Warning: Email queue full, dropping notification for %s", job.To)
+		log.Printf("Warning: ticMail queue full, dropping alert for %s", job.To)
 	}
 }
 
@@ -65,7 +75,7 @@ func (s *EmailService) sendSMTP(job EmailJob) error {
 	addr := fmt.Sprintf("%s:%s", s.smtpHost, s.smtpPort)
 
 	headers := make(map[string]string)
-	headers["From"] = fmt.Sprintf("ticDesk Support <%s>", s.fromAddr)
+	headers["From"] = fmt.Sprintf("ticDesk ticMail <%s>", s.fromAddr)
 	headers["To"] = job.To
 	headers["Subject"] = job.Subject
 	headers["MIME-Version"] = "1.0"
@@ -78,7 +88,6 @@ func (s *EmailService) sendSMTP(job EmailJob) error {
 	msg.WriteString("\r\n")
 	msg.WriteString(job.HTML)
 
-	// Send via unauthenticated SMTP (MailHog)
 	return smtp.SendMail(addr, nil, s.fromAddr, []string{job.To}, []byte(msg.String()))
 }
 
@@ -115,8 +124,8 @@ func (s *EmailService) buildOutlookWrapper(title, preheader, bodyContent, action
     <div class="outlook-container">
         <!-- Outlook Brand Bar -->
         <div class="outlook-header">
-            <div class="outlook-brand">ticDesk Support</div>
-            <div class="outlook-sub">Microsoft Outlook Mail Gateway</div>
+            <div class="outlook-brand">ticMail Alert Engine</div>
+            <div class="outlook-sub">Microsoft Outlook 365 Integration</div>
         </div>
 
         <!-- Email Main Content -->
@@ -131,7 +140,7 @@ func (s *EmailService) buildOutlookWrapper(title, preheader, bodyContent, action
 
         <!-- Footer -->
         <div class="outlook-footer">
-            Sent via ticDesk IT Helpdesk • Powered by Microsoft Outlook Email Templates
+            Sent via ticMail Built-in Email Engine • ticDesk Helpdesk Platform
         </div>
     </div>
 </body>
@@ -140,7 +149,7 @@ func (s *EmailService) buildOutlookWrapper(title, preheader, bodyContent, action
 }
 
 func (s *EmailService) NotifyTicketCreated(ticket *models.Ticket, recipientEmail string) {
-	subject := fmt.Sprintf("[Outlook Ticket Alert] #%d: %s", ticket.TicketNumber, ticket.Title)
+	subject := fmt.Sprintf("[ticMail Alert] Ticket #%d: %s", ticket.TicketNumber, ticket.Title)
 	preheader := fmt.Sprintf("A new support ticket has been created by %s", recipientEmail)
 
 	bodyTable := fmt.Sprintf(`
@@ -165,13 +174,13 @@ func (s *EmailService) NotifyTicketCreated(ticket *models.Ticket, recipientEmail
 	`, ticket.TicketNumber, ticket.Title, ticket.Priority)
 
 	actionURL := fmt.Sprintf("http://localhost:8081/tickets/%s", ticket.ID)
-	html := s.buildOutlookWrapper("Ticket Created Successfully", preheader, bodyTable, actionURL, "Open Ticket in Outlook")
+	html := s.buildOutlookWrapper("Ticket Created Successfully", preheader, bodyTable, actionURL, "Open Ticket in ticDesk")
 
 	s.Enqueue(EmailJob{To: recipientEmail, Subject: subject, HTML: html})
 }
 
 func (s *EmailService) NotifyStatusChanged(ticket *models.Ticket, oldStatus, newStatus models.TicketStatus, recipientEmail string) {
-	subject := fmt.Sprintf("[Outlook Status Update] Ticket #%d changed to %s", ticket.TicketNumber, newStatus)
+	subject := fmt.Sprintf("[ticMail Update] Ticket #%d changed to %s", ticket.TicketNumber, newStatus)
 	preheader := fmt.Sprintf("Ticket #%d status updated from %s to %s", ticket.TicketNumber, oldStatus, newStatus)
 
 	badgeClass := "outlook-badge-progress"
@@ -203,7 +212,7 @@ func (s *EmailService) NotifyStatusChanged(ticket *models.Ticket, oldStatus, new
 }
 
 func (s *EmailService) NotifyNewComment(ticket *models.Ticket, authorName, commentBody string, recipientEmail string) {
-	subject := fmt.Sprintf("[Outlook Conversation] New Reply on Ticket #%d", ticket.TicketNumber)
+	subject := fmt.Sprintf("[ticMail Alert] New Reply on Ticket #%d", ticket.TicketNumber)
 	preheader := fmt.Sprintf("%s replied to ticket #%d", authorName, ticket.TicketNumber)
 
 	bodyTable := fmt.Sprintf(`

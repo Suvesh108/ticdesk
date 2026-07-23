@@ -17,12 +17,11 @@ services:
       - DB_NAME=ticdesk
       - DB_SSLMODE=disable
       - SESSION_SECRET=super-secret-key-change-in-production-32bytes
-      - SMTP_HOST=mailhog
+      - SMTP_HOST=localhost
       - SMTP_PORT=1025
-      - SMTP_FROM=no-reply@ticdesk.local
+      - SMTP_FROM=notifications@ticdesk.com
     depends_on:
       - postgres
-      - mailhog
 
   postgres:
     image: postgres:16-alpine
@@ -36,14 +35,6 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-
-  mailhog:
-    image: mailhog/mailhog:latest
-    container_name: ticdesk_mailhog
-    restart: always
-    ports:
-      - "1025:1025" # SMTP server
-      - "8025:8025" # Web UI
 
 volumes:
   postgres_data:

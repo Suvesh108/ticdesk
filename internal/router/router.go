@@ -21,6 +21,7 @@ func New(
 	adminHandler *handlers.AdminHandler,
 	calendarHandler *handlers.CalendarHandler,
 	noteHandler *handlers.NoteHandler,
+	ticmailHandler *handlers.TicMailHandler,
 ) http.Handler {
 	r := chi.NewRouter()
 
@@ -53,13 +54,13 @@ func New(
 		r.Get("/dashboard", dashboardHandler.ShowDashboard)
 		r.Get("/dashboard/stats.json", dashboardHandler.GetStatsJSON)
 
-		// Tickets Routes (Role-Filtered inside repository queries)
+		// Tickets Routes
 		r.Get("/tickets", ticketHandler.ShowTicketList)
 		r.Get("/tickets/new", ticketHandler.ShowNewTicket)
 		r.Post("/tickets", ticketHandler.ProcessCreateTicket)
 		r.Get("/tickets/{id}", ticketHandler.ShowTicketDetail)
 
-		// Staff & Admin Only Routes (Calendar & Notes)
+		// Staff & Admin Only Routes (Calendar, Notes, ticMail)
 		r.Group(func(r chi.Router) {
 			r.Use(auth.RequireRole(models.RoleAdmin, models.RoleSupport))
 
@@ -71,6 +72,10 @@ func New(
 			r.Post("/notes", noteHandler.CreateNote)
 			r.Post("/notes/{id}/pin", noteHandler.TogglePin)
 			r.Post("/notes/{id}/delete", noteHandler.DeleteNote)
+
+			// ticMail Built-in External Email System Inspector
+			r.Get("/ticmail", ticmailHandler.RenderTicMail)
+			r.Post("/ticmail/clear", ticmailHandler.ClearTicMail)
 
 			// HTMX Partial Mutation Routes
 			r.Patch("/tickets/{id}/status", ticketHandler.UpdateStatus)

@@ -44,10 +44,6 @@ func main() {
 	// Initialize Services
 	storageService := services.NewLocalStorageService("web/static/uploads")
 
-	// Initialize Email Worker (MailHog)
-	emailService := services.NewEmailService("ticdesk_mailhog", "1025", "notifications@ticdesk.com")
-	emailService.StartWorker(ctx)
-
 	// Initialize Session Manager
 	sessionManager := auth.InitSessionManager(cfg.SessionSecret)
 
@@ -58,6 +54,11 @@ func main() {
 	attachmentRepo := repository.NewAttachmentRepository(dbPool)
 	scheduleRepo := repository.NewScheduleRepository(dbPool)
 	noteRepo := repository.NewNoteRepository(dbPool)
+	ticmailRepo := repository.NewTicMailRepository(dbPool)
+
+	// Initialize Email Worker (ticMail built-in engine)
+	emailService := services.NewEmailService("ticdesk_mailhog", "1025", "notifications@ticdesk.com", ticmailRepo)
+	emailService.StartWorker(ctx)
 
 	// Parse Templates
 	tmpl := template.Must(template.New("").Funcs(template.FuncMap{
@@ -75,6 +76,7 @@ func main() {
 	adminHandler := handlers.NewAdminHandler(userRepo)
 	calendarHandler := handlers.NewCalendarHandler(scheduleRepo, tmpl)
 	noteHandler := handlers.NewNoteHandler(noteRepo, tmpl)
+	ticmailHandler := handlers.NewTicMailHandler(ticmailRepo, tmpl)
 
 	// Build Router
 	r := router.New(
@@ -87,6 +89,7 @@ func main() {
 		adminHandler,
 		calendarHandler,
 		noteHandler,
+		ticmailHandler,
 	)
 
 	srv := &http.Server{

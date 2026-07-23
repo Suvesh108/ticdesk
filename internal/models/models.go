@@ -119,12 +119,11 @@ type DashboardStats struct {
 	AgentWorkload        []AgentStat    `json:"agent_workload"`
 }
 
-// Outlook Calendar Schedule Event
 type ScheduleEvent struct {
 	ID            string    `json:"id"`
 	Title         string    `json:"title"`
 	Description   string    `json:"description"`
-	EventType     string    `json:"event_type"` // 'maintenance', 'shift', 'deadline'
+	EventType     string    `json:"event_type"`
 	StartTime     time.Time `json:"start_time"`
 	EndTime       time.Time `json:"end_time"`
 	CreatedByID   string    `json:"created_by_id"`
@@ -132,14 +131,23 @@ type ScheduleEvent struct {
 	CreatedAt     time.Time `json:"created_at"`
 }
 
-// Outlook Personal & Team Scratchpad Notes
 type UserNote struct {
 	ID        string    `json:"id"`
 	UserID    string    `json:"user_id"`
 	Title     string    `json:"title"`
 	Content   string    `json:"content"`
-	Color     string    `json:"color"` // 'blue', 'amber', 'emerald', 'purple'
+	Color     string    `json:"color"`
 	IsPinned  bool      `json:"is_pinned"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// Built-in ticMail External Email Notification Log
+type TicMailLog struct {
+	ID        string    `json:"id"`
+	Recipient string    `json:"recipient"`
+	Subject   string    `json:"subject"`
+	BodyHTML  string    `json:"body_html"`
+	Status    string    `json:"status"`
+	CreatedAt time.Time `json:"created_at"`
 }
