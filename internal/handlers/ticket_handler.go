@@ -88,17 +88,26 @@ func (h *TicketHandler) ShowTicketList(w http.ResponseWriter, r *http.Request) {
 		Limit:      limit,
 	}
 
-	// Check if this is an HTMX request
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+
+	// Check if this is an HTMX request for filtering/searching
 	if r.Header.Get("HX-Request") == "true" {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		if err := h.tmpl.ExecuteTemplate(w, "ticket_table.html", data); err != nil {
+		partialTmpl, err := template.New("ticket_table.html").Funcs(template.FuncMap{
+			"sub": func(a, b int) int { return a - b },
+			"add": func(a, b int) int { return a + b },
+			"mul": func(a, b int) int { return a * b },
+		}).ParseFiles("web/templates/partials/ticket_table.html")
+		if err != nil {
+			http.Error(w, "Template Error: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if err := partialTmpl.Execute(w, data); err != nil {
 			http.Error(w, "Template Error: "+err.Error(), http.StatusInternalServerError)
 		}
 		return
 	}
 
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	tmpl, err := template.New("").Funcs(template.FuncMap{
+	tmpl, err := template.New("base.html").Funcs(template.FuncMap{
 		"sub": func(a, b int) int { return a - b },
 		"add": func(a, b int) int { return a + b },
 		"mul": func(a, b int) int { return a * b },
@@ -111,6 +120,7 @@ func (h *TicketHandler) ShowTicketList(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Template Error: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
+
 	if err := tmpl.ExecuteTemplate(w, "base.html", data); err != nil {
 		http.Error(w, "Template Error: "+err.Error(), http.StatusInternalServerError)
 	}
