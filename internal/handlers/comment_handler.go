@@ -17,6 +17,7 @@ type CommentHandler struct {
 	attachmentRepo *repository.AttachmentRepository
 	ticketRepo     *repository.TicketRepository
 	storageService services.StorageService
+	emailService   *services.EmailService
 }
 
 func NewCommentHandler(
@@ -24,12 +25,14 @@ func NewCommentHandler(
 	attachmentRepo *repository.AttachmentRepository,
 	ticketRepo *repository.TicketRepository,
 	storageService services.StorageService,
+	emailService *services.EmailService,
 ) *CommentHandler {
 	return &CommentHandler{
 		commentRepo:    commentRepo,
 		attachmentRepo: attachmentRepo,
 		ticketRepo:     ticketRepo,
 		storageService: storageService,
+		emailService:   emailService,
 	}
 }
 
@@ -101,6 +104,14 @@ func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
 		filePath, fileSize, mimeType, err := h.storageService.SaveFile(ticketID, file, header)
 		if err == nil {
 			_, _ = h.attachmentRepo.CreateAttachment(r.Context(), &ticketID, &comment.ID, user.ID, header.Filename, filePath, fileSize, mimeType)
+		}
+	}
+
+	// Trigger Email Notification for public comments (non-blocking)
+	if !isInternal && h.emailService != nil {
+		ticket, _ := h.ticketRepo.GetTicketByID(r.Context(), ticketID)
+		if ticket != nil {
+			h.emailService.NotifyNewComment(ticket, user.Name, body, user.Email)
 		}
 	}
 

@@ -25,7 +25,7 @@ func main() {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	dbPool, err := pgxpool.New(ctx, cfg.DatabaseURL())
@@ -43,6 +43,10 @@ func main() {
 	// Initialize Services
 	storageService := services.NewLocalStorageService("web/static/uploads")
 
+	// Initialize Email Worker (MailHog)
+	emailService := services.NewEmailService("ticdesk_mailhog", "1025", "notifications@ticdesk.com")
+	emailService.StartWorker(ctx)
+
 	// Initialize Session Manager
 	sessionManager := auth.InitSessionManager(cfg.SessionSecret)
 
@@ -55,8 +59,8 @@ func main() {
 	// Initialize Handlers
 	authHandler := handlers.NewAuthHandler(userRepo)
 	dashboardHandler := handlers.NewDashboardHandler(ticketRepo)
-	ticketHandler := handlers.NewTicketHandler(ticketRepo)
-	commentHandler := handlers.NewCommentHandler(commentRepo, attachmentRepo, ticketRepo, storageService)
+	ticketHandler := handlers.NewTicketHandler(ticketRepo, emailService)
+	commentHandler := handlers.NewCommentHandler(commentRepo, attachmentRepo, ticketRepo, storageService, emailService)
 	attachmentHandler := handlers.NewAttachmentHandler(attachmentRepo, ticketRepo)
 	adminHandler := handlers.NewAdminHandler(userRepo)
 

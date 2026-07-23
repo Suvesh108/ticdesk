@@ -4,50 +4,22 @@ import (
 	"html/template"
 	"net/http"
 	"strconv"
-	"strings"
+
 	"ticDesk/internal/auth"
 	"ticDesk/internal/models"
 	"ticDesk/internal/repository"
+	"ticDesk/internal/services"
 
 	"github.com/go-chi/chi/v5"
 )
 
 type TicketHandler struct {
-	ticketRepo *repository.TicketRepository
+	repo         *repository.TicketRepository
+	emailService *services.EmailService
 }
 
-func NewTicketHandler(ticketRepo *repository.TicketRepository) *TicketHandler {
-	return &TicketHandler{
-		ticketRepo: ticketRepo,
-	}
-}
-
-func renderTicketPage(w http.ResponseWriter, page string, data interface{}) {
-	tmpl, err := template.ParseFiles(
-		"web/templates/layouts/base.html",
-		"web/templates/pages/"+page,
-		"web/templates/partials/toast.html",
-	)
-	if err != nil {
-		http.Error(w, "Template Error: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := tmpl.ExecuteTemplate(w, "base.html", data); err != nil {
-		http.Error(w, "Render Error: "+err.Error(), http.StatusInternalServerError)
-	}
-}
-
-func renderPartial(w http.ResponseWriter, partial string, data interface{}) {
-	tmpl, err := template.ParseFiles("web/templates/partials/" + partial)
-	if err != nil {
-		http.Error(w, "Partial Error: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := tmpl.Execute(w, data); err != nil {
-		http.Error(w, "Render Partial Error: "+err.Error(), http.StatusInternalServerError)
-	}
+func NewTicketHandler(repo *repository.TicketRepository, emailService *services.EmailService) *TicketHandler {
+	return &TicketHandler{repo: repo, emailService: emailService}
 }
 
 type TicketListData struct {
@@ -58,7 +30,6 @@ type TicketListData struct {
 type TicketNewData struct {
 	User       *models.User
 	Categories []models.Category
-	Error      string
 }
 
 type TicketDetailData struct {
@@ -69,70 +40,81 @@ type TicketDetailData struct {
 
 func (h *TicketHandler) ShowTicketList(w http.ResponseWriter, r *http.Request) {
 	user := auth.GetUserFromContext(r.Context())
-	tickets, err := h.ticketRepo.ListTickets(r.Context(), user)
+	tickets, err := h.repo.ListTickets(r.Context(), user)
 	if err != nil {
 		http.Error(w, "Failed to load tickets: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	data := TicketListData{
-		User:    user,
-		Tickets: tickets,
+	tmpl, err := template.ParseFiles(
+		"web/templates/layouts/base.html",
+		"web/templates/pages/ticket_list.html",
+	)
+	if err != nil {
+		http.Error(w, "Template Error: "+err.Error(), http.StatusInternalServerError)
+		return
 	}
-	renderTicketPage(w, "ticket_list.html", data)
+
+	data := TicketListData{User: user, Tickets: tickets}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	_ = tmpl.ExecuteTemplate(w, "base.html", data)
 }
 
 func (h *TicketHandler) ShowNewTicket(w http.ResponseWriter, r *http.Request) {
 	user := auth.GetUserFromContext(r.Context())
-	categories, err := h.ticketRepo.GetCategories(r.Context())
+	categories, err := h.repo.GetCategories(r.Context())
 	if err != nil {
 		http.Error(w, "Failed to load categories", http.StatusInternalServerError)
 		return
 	}
 
-	data := TicketNewData{
-		User:       user,
-		Categories: categories,
+	tmpl, err := template.ParseFiles(
+		"web/templates/layouts/base.html",
+		"web/templates/pages/ticket_new.html",
+	)
+	if err != nil {
+		http.Error(w, "Template Error: "+err.Error(), http.StatusInternalServerError)
+		return
 	}
-	renderTicketPage(w, "ticket_new.html", data)
+
+	data := TicketNewData{User: user, Categories: categories}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	_ = tmpl.ExecuteTemplate(w, "base.html", data)
 }
 
 func (h *TicketHandler) ProcessCreateTicket(w http.ResponseWriter, r *http.Request) {
 	user := auth.GetUserFromContext(r.Context())
+
 	if err := r.ParseForm(); err != nil {
 		http.Error(w, "Invalid form submission", http.StatusBadRequest)
 		return
 	}
 
-	title := strings.TrimSpace(r.FormValue("title"))
-	description := strings.TrimSpace(r.FormValue("description"))
+	title := r.FormValue("title")
+	description := r.FormValue("description")
 	categoryIDStr := r.FormValue("category_id")
 	priorityStr := r.FormValue("priority")
 
-	categoryID, _ := strconv.Atoi(categoryIDStr)
-	priority := models.PriorityMedium
-	if priorityStr == "low" {
-		priority = models.PriorityLow
-	} else if priorityStr == "high" {
-		priority = models.PriorityHigh
-	}
-
-	if title == "" || description == "" || categoryID == 0 {
-		categories, _ := h.ticketRepo.GetCategories(r.Context())
-		data := TicketNewData{
-			User:       user,
-			Categories: categories,
-			Error:      "Please fill in all required fields",
-		}
-		w.WriteHeader(http.StatusBadRequest)
-		renderTicketPage(w, "ticket_new.html", data)
+	categoryID, err := strconv.Atoi(categoryIDStr)
+	if err != nil {
+		http.Error(w, "Invalid category", http.StatusBadRequest)
 		return
 	}
 
-	ticket, err := h.ticketRepo.CreateTicket(r.Context(), title, description, categoryID, priority, user.ID)
+	priority := models.TicketPriority(priorityStr)
+	if priority != models.PriorityLow && priority != models.PriorityMedium && priority != models.PriorityHigh {
+		priority = models.PriorityMedium
+	}
+
+	ticket, err := h.repo.CreateTicket(r.Context(), title, description, categoryID, priority, user.ID)
 	if err != nil {
 		http.Error(w, "Failed to create ticket: "+err.Error(), http.StatusInternalServerError)
 		return
+	}
+
+	// Trigger Email Notification (non-blocking)
+	if h.emailService != nil {
+		h.emailService.NotifyTicketCreated(ticket, user.Email)
 	}
 
 	http.Redirect(w, r, "/tickets/"+ticket.ID, http.StatusSeeOther)
@@ -142,28 +124,38 @@ func (h *TicketHandler) ShowTicketDetail(w http.ResponseWriter, r *http.Request)
 	user := auth.GetUserFromContext(r.Context())
 	ticketID := chi.URLParam(r, "id")
 
-	ticket, err := h.ticketRepo.GetTicketByID(r.Context(), ticketID)
+	ticket, err := h.repo.GetTicketByID(r.Context(), ticketID)
 	if err != nil {
 		http.Error(w, "Ticket not found", http.StatusNotFound)
 		return
 	}
 
 	if user.Role == models.RoleCustomer && ticket.CreatedByID != user.ID {
-		http.Error(w, "Forbidden: you cannot access this ticket", http.StatusForbidden)
+		http.Error(w, "Forbidden", http.StatusForbidden)
 		return
 	}
 
-	agents, _ := h.ticketRepo.GetSupportAgents(r.Context())
+	agents, _ := h.repo.GetSupportAgents(r.Context())
+
+	tmpl, err := template.ParseFiles(
+		"web/templates/layouts/base.html",
+		"web/templates/pages/ticket_detail.html",
+	)
+	if err != nil {
+		http.Error(w, "Template error: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	data := TicketDetailData{
 		User:   user,
 		Ticket: ticket,
 		Agents: agents,
 	}
-	renderTicketPage(w, "ticket_detail.html", data)
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	_ = tmpl.ExecuteTemplate(w, "base.html", data)
 }
 
-// HTMX Partial Update: Status
 func (h *TicketHandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	user := auth.GetUserFromContext(r.Context())
 	ticketID := chi.URLParam(r, "id")
@@ -179,24 +171,21 @@ func (h *TicketHandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 		statusStr = r.URL.Query().Get("status")
 	}
 
-	if statusStr == "" {
-		http.Error(w, "Status parameter required", http.StatusBadRequest)
-		return
-	}
-
 	newStatus := models.TicketStatus(statusStr)
-
-	updatedTicket, err := h.ticketRepo.UpdateTicketStatus(r.Context(), ticketID, newStatus, user.ID)
+	ticket, err := h.repo.UpdateTicketStatus(r.Context(), ticketID, newStatus, user.ID)
 	if err != nil {
 		http.Error(w, "Failed to update status: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	data := TicketDetailData{User: user, Ticket: updatedTicket}
-	renderPartial(w, "ticket_status_badge.html", data)
+	// Trigger Email Notification (non-blocking)
+	if h.emailService != nil {
+		h.emailService.NotifyStatusChanged(ticket, ticket.Status, newStatus, user.Email)
+	}
+
+	renderPartial(w, "ticket_status_badge.html", map[string]interface{}{"Ticket": ticket, "User": user})
 }
 
-// HTMX Partial Update: Priority
 func (h *TicketHandler) UpdatePriority(w http.ResponseWriter, r *http.Request) {
 	user := auth.GetUserFromContext(r.Context())
 	ticketID := chi.URLParam(r, "id")
@@ -212,24 +201,16 @@ func (h *TicketHandler) UpdatePriority(w http.ResponseWriter, r *http.Request) {
 		priorityStr = r.URL.Query().Get("priority")
 	}
 
-	if priorityStr == "" {
-		http.Error(w, "Priority parameter required", http.StatusBadRequest)
-		return
-	}
-
 	newPriority := models.TicketPriority(priorityStr)
-
-	updatedTicket, err := h.ticketRepo.UpdateTicketPriority(r.Context(), ticketID, newPriority)
+	ticket, err := h.repo.UpdateTicketPriority(r.Context(), ticketID, newPriority)
 	if err != nil {
 		http.Error(w, "Failed to update priority: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	data := TicketDetailData{User: user, Ticket: updatedTicket}
-	renderPartial(w, "ticket_priority_badge.html", data)
+	renderPartial(w, "ticket_priority_badge.html", map[string]interface{}{"Ticket": ticket, "User": user})
 }
 
-// HTMX Partial Update: Assignee
 func (h *TicketHandler) UpdateAssignee(w http.ResponseWriter, r *http.Request) {
 	user := auth.GetUserFromContext(r.Context())
 	ticketID := chi.URLParam(r, "id")
@@ -250,13 +231,22 @@ func (h *TicketHandler) UpdateAssignee(w http.ResponseWriter, r *http.Request) {
 		assigneeID = &assigneeIDStr
 	}
 
-	updatedTicket, err := h.ticketRepo.UpdateTicketAssignee(r.Context(), ticketID, assigneeID)
+	ticket, err := h.repo.UpdateTicketAssignee(r.Context(), ticketID, assigneeID)
 	if err != nil {
 		http.Error(w, "Failed to update assignee: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	agents, _ := h.ticketRepo.GetSupportAgents(r.Context())
-	data := TicketDetailData{User: user, Ticket: updatedTicket, Agents: agents}
-	renderPartial(w, "ticket_assignee.html", data)
+	agents, _ := h.repo.GetSupportAgents(r.Context())
+	renderPartial(w, "ticket_assignee.html", map[string]interface{}{"Ticket": ticket, "User": user, "Agents": agents})
+}
+
+func renderPartial(w http.ResponseWriter, templateName string, data interface{}) {
+	tmpl, err := template.ParseFiles("web/templates/partials/" + templateName)
+	if err != nil {
+		http.Error(w, "Partial render error: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	_ = tmpl.Execute(w, data)
 }
