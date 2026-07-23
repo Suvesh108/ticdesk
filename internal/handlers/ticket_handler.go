@@ -14,12 +14,14 @@ import (
 type TicketHandler struct {
 	repo         *repository.TicketRepository
 	emailService *services.EmailService
+	tmpl         *template.Template
 }
 
-func NewTicketHandler(repo *repository.TicketRepository, emailService *services.EmailService) *TicketHandler {
+func NewTicketHandler(repo *repository.TicketRepository, emailService *services.EmailService, tmpl *template.Template) *TicketHandler {
 	return &TicketHandler{
 		repo:         repo,
 		emailService: emailService,
+		tmpl:         tmpl,
 	}
 }
 
@@ -86,28 +88,17 @@ func (h *TicketHandler) ShowTicketList(w http.ResponseWriter, r *http.Request) {
 
 	// Check if this is an HTMX request
 	if r.Header.Get("HX-Request") == "true" {
-		tmpl, err := template.ParseFiles("web/templates/partials/ticket_table.html")
-		if err != nil {
-			http.Error(w, "Template Error: "+err.Error(), http.StatusInternalServerError)
-			return
-		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		_ = tmpl.Execute(w, data)
-		return
-	}
-
-	tmpl, err := template.ParseFiles(
-		"web/templates/layouts/base.html",
-		"web/templates/pages/ticket_list.html",
-		"web/templates/partials/ticket_table.html",
-	)
-	if err != nil {
-		http.Error(w, "Template Error: "+err.Error(), http.StatusInternalServerError)
+		if err := h.tmpl.ExecuteTemplate(w, "ticket_table.html", data); err != nil {
+			http.Error(w, "Template Error: "+err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	_ = tmpl.ExecuteTemplate(w, "base.html", data)
+	if err := h.tmpl.ExecuteTemplate(w, "ticket_list.html", data); err != nil {
+		http.Error(w, "Template Error: "+err.Error(), http.StatusInternalServerError)
+	}
 }
 
 func (h *TicketHandler) ShowNewTicket(w http.ResponseWriter, r *http.Request) {
@@ -123,21 +114,14 @@ func (h *TicketHandler) ShowNewTicket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tmpl, err := template.ParseFiles(
-		"web/templates/layouts/base.html",
-		"web/templates/pages/ticket_new.html",
-	)
-	if err != nil {
-		http.Error(w, "Template Error: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
 	data := map[string]interface{}{
 		"User":       user,
 		"Categories": categories,
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	_ = tmpl.ExecuteTemplate(w, "base.html", data)
+	if err := h.tmpl.ExecuteTemplate(w, "ticket_new.html", data); err != nil {
+		http.Error(w, "Template Error: "+err.Error(), http.StatusInternalServerError)
+	}
 }
 
 func (h *TicketHandler) ProcessCreateTicket(w http.ResponseWriter, r *http.Request) {
@@ -199,22 +183,15 @@ func (h *TicketHandler) ShowTicketDetail(w http.ResponseWriter, r *http.Request)
 
 	agents, _ := h.repo.GetSupportAgents(r.Context())
 
-	tmpl, err := template.ParseFiles(
-		"web/templates/layouts/base.html",
-		"web/templates/pages/ticket_detail.html",
-	)
-	if err != nil {
-		http.Error(w, "Template Error: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
 	data := TicketDetailData{
 		User:   user,
 		Ticket: ticket,
 		Agents: agents,
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	_ = tmpl.ExecuteTemplate(w, "base.html", data)
+	if err := h.tmpl.ExecuteTemplate(w, "ticket_detail.html", data); err != nil {
+		http.Error(w, "Template Error: "+err.Error(), http.StatusInternalServerError)
+	}
 }
 
 func (h *TicketHandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
@@ -243,18 +220,14 @@ func (h *TicketHandler) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 		h.emailService.NotifyStatusChanged(ticket, ticket.Status, newStatus, user.Email)
 	}
 
-	tmpl, err := template.ParseFiles("web/templates/partials/ticket_status_badge.html")
-	if err != nil {
-		http.Error(w, "Template Error: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
 	data := map[string]interface{}{
 		"User":   user,
 		"Ticket": ticket,
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	_ = tmpl.Execute(w, data)
+	if err := h.tmpl.ExecuteTemplate(w, "ticket_status_badge.html", data); err != nil {
+		http.Error(w, "Template Error: "+err.Error(), http.StatusInternalServerError)
+	}
 }
 
 func (h *TicketHandler) UpdatePriority(w http.ResponseWriter, r *http.Request) {
@@ -275,18 +248,14 @@ func (h *TicketHandler) UpdatePriority(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tmpl, err := template.ParseFiles("web/templates/partials/ticket_priority_badge.html")
-	if err != nil {
-		http.Error(w, "Template Error: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
 	data := map[string]interface{}{
 		"User":   user,
 		"Ticket": ticket,
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	_ = tmpl.Execute(w, data)
+	if err := h.tmpl.ExecuteTemplate(w, "ticket_priority_badge.html", data); err != nil {
+		http.Error(w, "Template Error: "+err.Error(), http.StatusInternalServerError)
+	}
 }
 
 func (h *TicketHandler) UpdateAssignee(w http.ResponseWriter, r *http.Request) {
@@ -313,17 +282,13 @@ func (h *TicketHandler) UpdateAssignee(w http.ResponseWriter, r *http.Request) {
 
 	agents, _ := h.repo.GetSupportAgents(r.Context())
 
-	tmpl, err := template.ParseFiles("web/templates/partials/ticket_assignee.html")
-	if err != nil {
-		http.Error(w, "Template Error: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
 	data := map[string]interface{}{
 		"User":   user,
 		"Ticket": ticket,
 		"Agents": agents,
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	_ = tmpl.Execute(w, data)
+	if err := h.tmpl.ExecuteTemplate(w, "ticket_assignee.html", data); err != nil {
+		http.Error(w, "Template Error: "+err.Error(), http.StatusInternalServerError)
+	}
 }
