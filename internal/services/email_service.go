@@ -122,10 +122,10 @@ func (s *EmailService) buildOutlookWrapper(title, preheader, bodyContent, action
 </head>
 <body>
     <div class="outlook-container">
-        <!-- Outlook Brand Bar -->
+        <!-- ticMail Brand Bar -->
         <div class="outlook-header">
             <div class="outlook-brand">ticMail Alert Engine</div>
-            <div class="outlook-sub">Microsoft Outlook 365 Integration</div>
+            <div class="outlook-sub">ticDesk Support System</div>
         </div>
 
         <!-- Email Main Content -->

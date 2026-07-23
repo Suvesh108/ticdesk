@@ -44,7 +44,7 @@
         }
     </script>
 
-    <!-- Custom Microsoft Outlook 365 CSS Tokens -->
+    <!-- ticDesk Custom CSS Tokens -->
     <style>
         body {
             font-family: 'Segoe UI', 'Inter', sans-serif;
@@ -101,7 +101,7 @@
 <body class="h-full flex flex-col antialiased selection:bg-sky-600 selection:text-white" x-data="{ mobilePaneOpen: false }">
 
     {{if .User}}
-    <!-- Top Microsoft Outlook Header Ribbon -->
+    <!-- Top ticDesk Header Bar -->
     <header class="h-12 outlook-command-bar flex items-center justify-between px-3 z-40 shrink-0">
         <!-- Brand & Mobile Toggle -->
         <div class="flex items-center space-x-3">
@@ -167,7 +167,7 @@
     <div class="flex-1 flex overflow-hidden">
 
         {{if .User}}
-        <!-- 1. Far Left Outlook App Rail (Width: 50px) -->
+        <!-- 1. Far Left App Rail (Width: 50px) -->
         <nav class="w-12 outlook-app-rail hidden md:flex flex-col items-center py-4 space-y-5 shrink-0 z-30">
             <!-- Today / Overview -->
             <a href="/dashboard" class="p-2 rounded text-slate-400 hover:text-white hover:bg-[#252423] transition-colors" title="Today Overview">
@@ -216,7 +216,7 @@
             {{end}}
         </nav>
 
-        <!-- 2. Secondary Outlook Folder Pane (Width: 220px) -->
+        <!-- 2. Secondary Folder Pane (Width: 220px) -->
         <aside class="w-56 outlook-folder-pane hidden md:flex flex-col p-3 space-y-4 shrink-0 overflow-y-auto z-20">
             
             <!-- Favorites Section -->

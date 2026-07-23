@@ -1,131 +1,168 @@
 {{template "base.html" .}}
 
-{{define "title"}}ticMail Alert Inspector — Outlook 365{{end}}
+{{define "title"}}ticMail Alert — ticDesk{{end}}
 
 {{define "content"}}
-<div class="space-y-6" x-data="{ activeEmailIndex: 0 }">
+<div class="h-full flex flex-col gap-0 -mt-1" x-data="{ activeEmailIndex: 0, composeOpen: false }">
 
-    <!-- Top Ribbon Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#292827]">
-        <div>
-            <div class="inline-flex items-center space-x-1.5 px-2 py-0.5 rounded bg-sky-500/10 border border-sky-500/20 text-sky-400 text-[10px] font-bold uppercase tracking-wider mb-1">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <!-- ticMail Header bar: violet/indigo theme (completely different from others) -->
+    <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center shadow-lg shadow-violet-900/40 shrink-0">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
                 </svg>
-                <span>Built-in ticMail Inbound Email Engine</span>
             </div>
-            <h1 class="text-xl font-bold text-white tracking-tight">ticMail External Email & Guest Ingestion Portal</h1>
-            <p class="text-xs text-slate-400 mt-0.5">Automated inbound email ingestion, temporary guest credentials generation, auto-assignment, & closure auto-deletion</p>
+            <div>
+                <h1 class="text-lg font-bold text-white tracking-tight leading-none">ticMail Alert Inspector</h1>
+                <p class="text-[11px] text-slate-400 mt-0.5">Inbound ingestion · Guest credential generation · Auto-assignment</p>
+            </div>
         </div>
 
-        <form action="/ticmail/clear" method="POST">
-            <button type="submit" class="px-3 py-1.5 bg-[#252423] hover:bg-rose-500/20 hover:text-rose-400 border border-[#323130] text-slate-300 text-xs font-semibold rounded transition-colors">
-                Clear Email Inbox Logs
+        <div class="flex items-center gap-2">
+            <span class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                Auto-Assign Active
+            </span>
+
+            <!-- Compose toggle button -->
+            <button @click="composeOpen = !composeOpen"
+                    class="px-3.5 py-1.5 bg-violet-600 hover:bg-violet-500 text-white font-bold text-xs rounded flex items-center gap-1.5 transition-colors shadow-md shadow-violet-900/40">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path>
+                </svg>
+                <span x-text="composeOpen ? 'Close' : 'Simulate Email'">Simulate Email</span>
             </button>
-        </form>
-    </div>
 
-    <!-- Inbound Email Ingestion Simulator Card -->
-    <div class="outlook-card p-5">
-        <div class="flex items-center justify-between pb-2 border-b border-[#292827] mb-3">
-            <h2 class="text-xs font-bold uppercase tracking-wider text-slate-300">✉️ Inbound External Customer Email Simulator (Gmail / Outlook)</h2>
-            <span class="text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono">Auto-Assign & Temporary Guest Credentials Active</span>
-        </div>
-
-        <form action="/ticmail/simulate" method="POST" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div>
-                <label for="sender_name" class="block text-[11px] font-semibold text-slate-400 mb-1">Customer Name</label>
-                <input type="text" id="sender_name" name="sender_name" placeholder="e.g. David Miller" required 
-                       class="w-full px-3 py-2 bg-[#1b1a19] border border-[#323130] rounded text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500">
-            </div>
-
-            <div>
-                <label for="sender_email" class="block text-[11px] font-semibold text-slate-400 mb-1">Customer External Email</label>
-                <input type="email" id="sender_email" name="sender_email" placeholder="e.g. david.miller@gmail.com" required 
-                       class="w-full px-3 py-2 bg-[#1b1a19] border border-[#323130] rounded text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500">
-            </div>
-
-            <div>
-                <label for="priority" class="block text-[11px] font-semibold text-slate-400 mb-1">Priority Level</label>
-                <select id="priority" name="priority" class="w-full px-3 py-2 bg-[#1b1a19] border border-[#323130] rounded text-xs text-slate-200 focus:outline-none focus:border-sky-500">
-                    <option value="high">High Priority</option>
-                    <option value="medium" selected>Medium Priority</option>
-                    <option value="low">Low Priority</option>
-                </select>
-            </div>
-
-            <div class="sm:col-span-2">
-                <label for="subject" class="block text-[11px] font-semibold text-slate-400 mb-1">Email Subject Line</label>
-                <input type="text" id="subject" name="subject" placeholder="e.g. Urgent: Payment Gateway API Returning HTTP 502 Bad Gateway" required 
-                       class="w-full px-3 py-2 bg-[#1b1a19] border border-[#323130] rounded text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500">
-            </div>
-
-            <div class="flex items-end">
-                <button type="submit" class="w-full py-2 bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs rounded transition-colors shadow-sm">
-                    🚀 Simulate Sending Inbound Email
+            <form action="/ticmail/clear" method="POST">
+                <button type="submit" class="px-3 py-1.5 bg-[#1b1a19] hover:bg-rose-500/10 hover:text-rose-400 hover:border-rose-500/30 border border-[#292827] text-slate-400 text-xs font-medium rounded transition-colors">
+                    Clear Logs
                 </button>
-            </div>
+            </form>
+        </div>
+    </div>
 
-            <div class="sm:col-span-3">
-                <label for="description" class="block text-[11px] font-semibold text-slate-400 mb-1">Email Message Body</label>
-                <textarea id="description" name="description" rows="2" required placeholder="Describe the issue reported by the customer..." 
-                          class="w-full px-3 py-2 bg-[#1b1a19] border border-[#323130] rounded text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"></textarea>
+    <!-- Compose / Simulate Panel (collapsible) -->
+    <div x-show="composeOpen" x-cloak
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 -translate-y-2"
+         x-transition:enter-end="opacity-100 translate-y-0"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100 translate-y-0"
+         x-transition:leave-end="opacity-0 -translate-y-2"
+         class="mb-4 bg-[#1b1a19] border border-violet-500/30 rounded-xl overflow-hidden">
+
+        <div class="flex items-center justify-between px-5 py-3 bg-violet-900/20 border-b border-violet-500/20">
+            <span class="text-xs font-bold text-violet-300 flex items-center gap-2">
+                ✉️ External Customer Email Simulator
+                <span class="text-[10px] font-normal text-slate-500 bg-[#252423] px-2 py-0.5 rounded border border-[#323130]">Gmail / Any Email Client</span>
+            </span>
+        </div>
+
+        <form action="/ticmail/simulate" method="POST" class="p-5">
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-3">
+                <div>
+                    <label for="sender_name" class="block text-[11px] font-semibold text-slate-400 mb-1">Customer Name</label>
+                    <input type="text" id="sender_name" name="sender_name" placeholder="e.g. David Miller" required
+                           class="w-full px-3 py-2 bg-[#252423] border border-[#323130] rounded text-xs text-white placeholder-slate-600 focus:outline-none focus:border-violet-500 transition-colors">
+                </div>
+                <div>
+                    <label for="sender_email" class="block text-[11px] font-semibold text-slate-400 mb-1">External Email</label>
+                    <input type="email" id="sender_email" name="sender_email" placeholder="customer@gmail.com" required
+                           class="w-full px-3 py-2 bg-[#252423] border border-[#323130] rounded text-xs text-white placeholder-slate-600 focus:outline-none focus:border-violet-500 transition-colors">
+                </div>
+                <div>
+                    <label for="priority" class="block text-[11px] font-semibold text-slate-400 mb-1">Priority</label>
+                    <select id="priority" name="priority" class="w-full px-3 py-2 bg-[#252423] border border-[#323130] rounded text-xs text-slate-200 focus:outline-none focus:border-violet-500">
+                        <option value="high">🔴 High</option>
+                        <option value="medium" selected>🟡 Medium</option>
+                        <option value="low">🟢 Low</option>
+                    </select>
+                </div>
+                <div class="flex items-end">
+                    <button type="submit" class="w-full py-2 bg-violet-600 hover:bg-violet-500 text-white font-bold text-xs rounded transition-colors shadow-md shadow-violet-900/30">
+                        🚀 Simulate Inbound
+                    </button>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label for="subject" class="block text-[11px] font-semibold text-slate-400 mb-1">Subject</label>
+                    <input type="text" id="subject" name="subject" placeholder="e.g. Payment API returning 502 Bad Gateway" required
+                           class="w-full px-3 py-2 bg-[#252423] border border-[#323130] rounded text-xs text-white placeholder-slate-600 focus:outline-none focus:border-violet-500 transition-colors">
+                </div>
+                <div>
+                    <label for="description" class="block text-[11px] font-semibold text-slate-400 mb-1">Message Body</label>
+                    <textarea id="description" name="description" rows="1" required placeholder="Describe the customer's issue..."
+                              class="w-full px-3 py-2 bg-[#252423] border border-[#323130] rounded text-xs text-white placeholder-slate-600 focus:outline-none focus:border-violet-500 transition-colors resize-none"></textarea>
+                </div>
             </div>
         </form>
     </div>
 
-    <!-- Main 2-Pane Split Mail View -->
+    <!-- 3-pane mail client layout -->
     {{if .Logs}}
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
-            <!-- Left Pane (1/3): Captured Emails List -->
-            <div class="outlook-card overflow-hidden divide-y divide-[#292827] max-h-[650px] overflow-y-auto">
-                {{range $idx, $log := .Logs}}
-                    <div @click="activeEmailIndex = {{$idx}}" 
-                         :class="activeEmailIndex === {{$idx}} ? 'bg-[#1b1a19] border-l-4 border-l-sky-500' : 'hover:bg-[#1b1a19]'"
-                         class="p-3.5 cursor-pointer transition-colors space-y-1">
-                        <div class="flex items-center justify-between text-[11px] text-slate-400">
-                            <span class="font-semibold text-sky-400 truncate max-w-[150px]">To: {{$log.Recipient}}</span>
-                            <span class="font-mono text-[10px]">{{$log.CreatedAt.Format "15:04:05"}}</span>
-                        </div>
-                        <h2 class="text-xs font-bold text-white truncate">{{$log.Subject}}</h2>
-                        <span class="inline-block px-1.5 py-0.2 rounded text-[9px] font-bold uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                            {{$log.Status}}
-                        </span>
-                    </div>
-                {{end}}
+    <div class="flex gap-0 bg-[#1b1a19] border border-[#292827] rounded-xl overflow-hidden" style="min-height: 500px;">
+
+        <!-- Left pane: Email list -->
+        <div class="w-72 shrink-0 border-r border-[#292827] overflow-y-auto divide-y divide-[#292827]">
+            <div class="px-3 py-2 bg-[#141312] flex items-center justify-between sticky top-0">
+                <span class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Inbox</span>
+                <span class="text-[10px] text-slate-600">{{len .Logs}} items</span>
             </div>
-
-            <!-- Right Reading Pane (2/3): Rendered Email Preview -->
-            <div class="lg:col-span-2 outlook-card p-6 min-h-[500px]">
-                {{range $idx, $log := .Logs}}
-                    <div x-show="activeEmailIndex === {{$idx}}" class="space-y-4">
-                        <div class="pb-3 border-b border-[#292827] space-y-1">
-                            <div class="flex items-center justify-between">
-                                <h2 class="text-base font-bold text-white">{{$log.Subject}}</h2>
-                                <span class="text-xs font-mono text-slate-400">{{$log.CreatedAt.Format "Jan 02, 2026 15:04"}}</span>
-                            </div>
-                            <div class="text-xs text-slate-300">
-                                <strong>To:</strong> <span class="font-mono text-sky-400">{{$log.Recipient}}</span> | <strong>From:</strong> <span class="text-slate-400">ticDesk ticMail &lt;notifications@ticdesk.com&gt;</span>
-                            </div>
-                        </div>
-
-                        <div class="bg-white rounded p-4 text-black min-h-[400px]">
-                            <iframe srcdoc="{{$log.BodyHTML}}" class="w-full h-[450px] border-0"></iframe>
-                        </div>
-                    </div>
-                {{end}}
+            {{range $idx, $log := .Logs}}
+            <div @click="activeEmailIndex = {{$idx}}"
+                 :class="activeEmailIndex === {{$idx}} ? 'bg-violet-900/20 border-l-2 border-l-violet-500' : 'border-l-2 border-l-transparent hover:bg-[#1f1e1d]'"
+                 class="px-3 py-3 cursor-pointer transition-all">
+                <div class="flex items-center justify-between mb-1">
+                    <span class="text-[11px] font-bold text-white truncate max-w-[150px]">{{$log.Recipient}}</span>
+                    <span class="text-[10px] font-mono text-slate-600 shrink-0 ml-1">{{$log.CreatedAt.Format "15:04"}}</span>
+                </div>
+                <p class="text-[11px] text-slate-300 truncate font-medium mb-1">{{$log.Subject}}</p>
+                <span class="inline-block px-1.5 rounded text-[9px] font-bold uppercase tracking-wider
+                    {{if eq $log.Status "sent"}}bg-emerald-500/15 text-emerald-400 border border-emerald-500/25
+                    {{else if eq $log.Status "pending"}}bg-amber-500/15 text-amber-400 border border-amber-500/25
+                    {{else}}bg-slate-500/15 text-slate-400 border border-slate-500/25{{end}}">
+                    {{$log.Status}}
+                </span>
             </div>
-
+            {{end}}
         </div>
+
+        <!-- Right pane: Email reading view -->
+        <div class="flex-1 min-w-0">
+            {{range $idx, $log := .Logs}}
+            <div x-show="activeEmailIndex === {{$idx}}" class="h-full flex flex-col">
+                <!-- Email metadata bar -->
+                <div class="px-6 py-4 border-b border-[#292827] space-y-1 bg-[#141312]">
+                    <h2 class="text-sm font-bold text-white">{{$log.Subject}}</h2>
+                    <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-400">
+                        <span><strong class="text-slate-300">To:</strong> <span class="font-mono text-violet-400">{{$log.Recipient}}</span></span>
+                        <span><strong class="text-slate-300">From:</strong> notifications@ticdesk.com</span>
+                        <span class="font-mono text-slate-500">{{$log.CreatedAt.Format "Jan 02, 2006 15:04:05"}}</span>
+                    </div>
+                </div>
+                <!-- Email body iframe -->
+                <div class="flex-1 bg-white overflow-hidden">
+                    <iframe srcdoc="{{$log.BodyHTML}}" class="w-full h-full border-0" style="min-height: 400px;"></iframe>
+                </div>
+            </div>
+            {{end}}
+        </div>
+    </div>
+
     {{else}}
-        <div class="text-center py-16 border border-dashed border-[#292827] rounded bg-[#1b1a19] space-y-2">
-            <div class="w-12 h-12 rounded-full bg-sky-500/10 border border-sky-500/20 mx-auto flex items-center justify-center text-sky-400 text-xl font-bold">
-                📬
-            </div>
-            <h3 class="text-sm font-bold text-white">ticMail Inbox is Empty</h3>
-            <p class="text-xs text-slate-400 max-w-sm mx-auto">Use the simulator form above to simulate an inbound external customer email!</p>
+    <!-- Empty state -->
+    <div class="flex-1 border border-dashed border-violet-500/20 rounded-xl bg-[#1b1a19] flex flex-col items-center justify-center py-20 gap-4">
+        <div class="w-16 h-16 rounded-full bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-3xl">📬</div>
+        <div class="text-center">
+            <p class="text-sm font-bold text-white mb-1">ticMail Inbox is Empty</p>
+            <p class="text-xs text-slate-500 max-w-xs">Click <strong class="text-violet-400">Simulate Email</strong> above to ingest an external customer email and auto-generate guest credentials.</p>
         </div>
+        <button @click="composeOpen = true" class="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white font-bold text-xs rounded transition-colors">
+            Open Email Simulator
+        </button>
+    </div>
     {{end}}
 
 </div>

@@ -1,73 +1,164 @@
 {{template "base.html" .}}
 
-{{define "title"}}Outlook Mail Inbox — ticDesk{{end}}
+{{define "title"}}Ticket Queue — ticDesk{{end}}
 
 {{define "content"}}
-<div class="space-y-5">
+<div class="space-y-0">
 
-    <!-- Top Ribbon Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-[#292827]">
-        <div>
-            <div class="inline-flex items-center space-x-1.5 px-2 py-0.5 rounded bg-sky-500/10 border border-sky-500/20 text-sky-400 text-[10px] font-bold uppercase tracking-wider mb-1">
-                <span>Outlook Mail Inbox</span>
+    <!-- Ticket Queue command bar -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-sky-600 to-blue-700 flex items-center justify-center shadow-lg shadow-sky-900/40 shrink-0">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+                </svg>
             </div>
-            <h1 class="text-xl font-bold text-white tracking-tight">Support Tickets Inbox</h1>
+            <div>
+                <h1 class="text-lg font-bold text-white tracking-tight leading-none">
+                    {{if eq .User.Role "customer"}}My Support Tickets{{else}}Ticket Queue{{end}}
+                </h1>
+                <p class="text-[11px] text-slate-400 mt-0.5">{{.TotalCount}} ticket{{if ne .TotalCount 1}}s{{end}} total</p>
+            </div>
         </div>
 
-        <a href="/tickets/new" class="px-3.5 py-1.5 bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs rounded transition-colors shadow-sm flex items-center space-x-1">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-            </svg>
-            <span>New Ticket</span>
-        </a>
+        <div class="flex items-center gap-2">
+            <a href="/tickets/new" class="px-3.5 py-1.5 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs rounded flex items-center space-x-1.5 transition-colors shadow-md shadow-sky-900/40">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path>
+                </svg>
+                <span>New Ticket</span>
+            </a>
+        </div>
     </div>
 
-    <!-- Filter & Search Toolbar -->
-    <form id="filter-form" hx-get="/tickets" hx-target="#ticket-table-container" hx-swap="outerHTML" class="outlook-card p-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
-        <div class="relative">
-            <input type="text" name="search" placeholder="Search ticket title or description..."
-                   hx-trigger="keyup changed delay:300ms, search"
-                   hx-get="/tickets"
-                   hx-target="#ticket-table-container"
-                   hx-swap="outerHTML"
-                   hx-include="#filter-form"
-                   class="w-full pl-8 pr-3 py-1.5 bg-[#1b1a19] border border-[#323130] rounded text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500">
-            <svg class="w-4 h-4 text-slate-500 absolute left-2.5 top-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-            </svg>
+    <!-- Two-pane layout: Filters sidebar + Ticket list -->
+    <div class="flex gap-5">
+
+        <!-- Left: Compact filter panel -->
+        <div class="w-48 shrink-0 hidden lg:block">
+            <div class="bg-[#1b1a19] border border-[#292827] rounded-lg overflow-hidden">
+                <div class="px-3 py-2 border-b border-[#292827]">
+                    <span class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Filters</span>
+                </div>
+
+                <form id="filter-form" class="p-2 space-y-1">
+                    <div class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider px-1 pt-1 pb-0.5">Status</div>
+
+                    <label class="flex items-center space-x-2 px-2 py-1 rounded hover:bg-[#252423] cursor-pointer">
+                        <input type="radio" name="status" value="" checked
+                               hx-get="/tickets" hx-target="#ticket-table-container" hx-swap="outerHTML" hx-include="#filter-form"
+                               class="text-sky-500 bg-[#1b1a19] border-[#323130] focus:ring-0">
+                        <span class="text-xs text-slate-300">All</span>
+                    </label>
+                    <label class="flex items-center space-x-2 px-2 py-1 rounded hover:bg-[#252423] cursor-pointer">
+                        <input type="radio" name="status" value="open"
+                               hx-get="/tickets" hx-target="#ticket-table-container" hx-swap="outerHTML" hx-include="#filter-form"
+                               class="text-sky-500 bg-[#1b1a19] border-[#323130] focus:ring-0">
+                        <span class="text-xs text-slate-300">Open</span>
+                    </label>
+                    <label class="flex items-center space-x-2 px-2 py-1 rounded hover:bg-[#252423] cursor-pointer">
+                        <input type="radio" name="status" value="in_progress"
+                               hx-get="/tickets" hx-target="#ticket-table-container" hx-swap="outerHTML" hx-include="#filter-form"
+                               class="text-sky-500 bg-[#1b1a19] border-[#323130] focus:ring-0">
+                        <span class="text-xs text-slate-300">In Progress</span>
+                    </label>
+                    <label class="flex items-center space-x-2 px-2 py-1 rounded hover:bg-[#252423] cursor-pointer">
+                        <input type="radio" name="status" value="resolved"
+                               hx-get="/tickets" hx-target="#ticket-table-container" hx-swap="outerHTML" hx-include="#filter-form"
+                               class="text-sky-500 bg-[#1b1a19] border-[#323130] focus:ring-0">
+                        <span class="text-xs text-slate-300">Resolved</span>
+                    </label>
+                    <label class="flex items-center space-x-2 px-2 py-1 rounded hover:bg-[#252423] cursor-pointer">
+                        <input type="radio" name="status" value="closed"
+                               hx-get="/tickets" hx-target="#ticket-table-container" hx-swap="outerHTML" hx-include="#filter-form"
+                               class="text-sky-500 bg-[#1b1a19] border-[#323130] focus:ring-0">
+                        <span class="text-xs text-slate-300">Closed</span>
+                    </label>
+
+                    <div class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider px-1 pt-2 pb-0.5 border-t border-[#292827] mt-1">Priority</div>
+                    <label class="flex items-center space-x-2 px-2 py-1 rounded hover:bg-[#252423] cursor-pointer">
+                        <input type="radio" name="priority" value="" checked
+                               hx-get="/tickets" hx-target="#ticket-table-container" hx-swap="outerHTML" hx-include="#filter-form"
+                               class="text-sky-500 bg-[#1b1a19] border-[#323130] focus:ring-0">
+                        <span class="text-xs text-slate-300">All</span>
+                    </label>
+                    <label class="flex items-center space-x-2 px-2 py-1 rounded hover:bg-[#252423] cursor-pointer">
+                        <input type="radio" name="priority" value="high"
+                               hx-get="/tickets" hx-target="#ticket-table-container" hx-swap="outerHTML" hx-include="#filter-form"
+                               class="text-sky-500 bg-[#1b1a19] border-[#323130] focus:ring-0">
+                        <span class="text-xs text-slate-300">High</span>
+                    </label>
+                    <label class="flex items-center space-x-2 px-2 py-1 rounded hover:bg-[#252423] cursor-pointer">
+                        <input type="radio" name="priority" value="medium"
+                               hx-get="/tickets" hx-target="#ticket-table-container" hx-swap="outerHTML" hx-include="#filter-form"
+                               class="text-sky-500 bg-[#1b1a19] border-[#323130] focus:ring-0">
+                        <span class="text-xs text-slate-300">Medium</span>
+                    </label>
+                    <label class="flex items-center space-x-2 px-2 py-1 rounded hover:bg-[#252423] cursor-pointer">
+                        <input type="radio" name="priority" value="low"
+                               hx-get="/tickets" hx-target="#ticket-table-container" hx-swap="outerHTML" hx-include="#filter-form"
+                               class="text-sky-500 bg-[#1b1a19] border-[#323130] focus:ring-0">
+                        <span class="text-xs text-slate-300">Low</span>
+                    </label>
+
+                    <div class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider px-1 pt-2 pb-0.5 border-t border-[#292827] mt-1">Category</div>
+                    <label class="flex items-center space-x-2 px-2 py-1 rounded hover:bg-[#252423] cursor-pointer">
+                        <input type="radio" name="category_id" value="" checked
+                               hx-get="/tickets" hx-target="#ticket-table-container" hx-swap="outerHTML" hx-include="#filter-form"
+                               class="text-sky-500 bg-[#1b1a19] border-[#323130] focus:ring-0">
+                        <span class="text-xs text-slate-300">All</span>
+                    </label>
+                    {{range .Categories}}
+                    <label class="flex items-center space-x-2 px-2 py-1 rounded hover:bg-[#252423] cursor-pointer">
+                        <input type="radio" name="category_id" value="{{.ID}}"
+                               hx-get="/tickets" hx-target="#ticket-table-container" hx-swap="outerHTML" hx-include="#filter-form"
+                               class="text-sky-500 bg-[#1b1a19] border-[#323130] focus:ring-0">
+                        <span class="text-xs text-slate-300 truncate">{{.Name}}</span>
+                    </label>
+                    {{end}}
+                </form>
+            </div>
         </div>
 
-        <select name="status" @change="$dispatch('submit')"
-                hx-get="/tickets" hx-target="#ticket-table-container" hx-swap="outerHTML" hx-include="#filter-form"
-                class="px-2.5 py-1.5 bg-[#1b1a19] border border-[#323130] rounded text-xs text-slate-300 focus:outline-none focus:border-sky-500">
-            <option value="">All Statuses</option>
-            <option value="open">Open</option>
-            <option value="in_progress">In Progress</option>
-            <option value="resolved">Resolved</option>
-            <option value="closed">Closed</option>
-        </select>
+        <!-- Right: Tickets list -->
+        <div class="flex-1 min-w-0 space-y-3">
+            <!-- Mobile filter row -->
+            <form id="filter-form-mobile" class="flex lg:hidden gap-2">
+                <select name="status" hx-get="/tickets" hx-target="#ticket-table-container" hx-swap="outerHTML" hx-include="#filter-form-mobile"
+                        class="flex-1 px-2.5 py-1.5 bg-[#1b1a19] border border-[#292827] rounded text-xs text-slate-300 focus:outline-none focus:border-sky-500">
+                    <option value="">All Statuses</option>
+                    <option value="open">Open</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="resolved">Resolved</option>
+                    <option value="closed">Closed</option>
+                </select>
+                <select name="priority" hx-get="/tickets" hx-target="#ticket-table-container" hx-swap="outerHTML" hx-include="#filter-form-mobile"
+                        class="flex-1 px-2.5 py-1.5 bg-[#1b1a19] border border-[#292827] rounded text-xs text-slate-300 focus:outline-none focus:border-sky-500">
+                    <option value="">All Priorities</option>
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                </select>
+            </form>
 
-        <select name="priority" @change="$dispatch('submit')"
-                hx-get="/tickets" hx-target="#ticket-table-container" hx-swap="outerHTML" hx-include="#filter-form"
-                class="px-2.5 py-1.5 bg-[#1b1a19] border border-[#323130] rounded text-xs text-slate-300 focus:outline-none focus:border-sky-500">
-            <option value="">All Priorities</option>
-            <option value="low">Low Priority</option>
-            <option value="medium">Medium Priority</option>
-            <option value="high">High Priority</option>
-        </select>
+            <!-- Search bar -->
+            <div class="relative">
+                <input type="text" name="search" placeholder="Search tickets..."
+                       hx-trigger="keyup changed delay:300ms"
+                       hx-get="/tickets"
+                       hx-target="#ticket-table-container"
+                       hx-swap="outerHTML"
+                       hx-include="#filter-form"
+                       class="w-full pl-9 pr-4 py-2 bg-[#1b1a19] border border-[#292827] rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 transition-colors">
+                <svg class="w-4 h-4 text-slate-500 absolute left-3 top-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+            </div>
 
-        <select name="category_id" @change="$dispatch('submit')"
-                hx-get="/tickets" hx-target="#ticket-table-container" hx-swap="outerHTML" hx-include="#filter-form"
-                class="px-2.5 py-1.5 bg-[#1b1a19] border border-[#323130] rounded text-xs text-slate-300 focus:outline-none focus:border-sky-500">
-            <option value="">All Categories</option>
-            {{range .Categories}}
-                <option value="{{.ID}}">{{.Name}}</option>
-            {{end}}
-        </select>
-    </form>
-
-    <!-- Ticket Table Container -->
-    {{template "ticket_table.html" .}}
+            <!-- Ticket table container -->
+            {{template "ticket_table.html" .}}
+        </div>
+    </div>
 
 </div>
 {{end}}

@@ -1,6 +1,6 @@
 <div align="center">
 
-  <h1>⚡ Outlook 365 — ticDesk Workstation</h1>
+  <h1>⚡ ticDesk — Enterprise Support Workstation</h1>
   <p><strong>Enterprise IT Helpdesk, Schedule Calendar & Shift Notes Platform</strong></p>
 
   <p>
@@ -25,16 +25,16 @@
 ## 🌟 Overview
 
 > [!NOTE]
-> **ticDesk Outlook 365 Workstation** is a complete, from-scratch redesign modeled directly after **Microsoft Outlook Web (Outlook 365)**. It features an Outlook 365 navigation app rail, a secondary folder pane, an interactive **Schedule Calendar (`/calendar`)**, and a **Shift Notes Scratchpad (`/notes`)** designed for Admins and Support agents to manage maintenance windows, agent shifts, SLA targets, and handoff notes.
+> **ticDesk** is a complete, from-scratch enterprise support workstation featuring a navigation app rail, a secondary folder pane, an interactive **Schedule Calendar (`/calendar`)**, and a **Shift Notes Scratchpad (`/notes`)** designed for Admins and Support agents to manage maintenance windows, agent shifts, SLA targets, and handoff notes.
 
-### ✨ Microsoft Outlook 365 Features
+### ✨ ticDesk Features
 
-- 📅 **Outlook Schedule Calendar (`/calendar`)**: Schedule and track server maintenance windows, support shifts, and SLA deadline targets.
-- 📝 **Outlook Shift Notes & Scratchpad (`/notes`)**: Sticky notes for support agents & admins to store quick reference IP addresses, credential snippets, and shift handoff checklists with pin/unpin controls.
-- ✉️ **Outlook Mail Tickets Inbox (`/tickets`)**: Server-rendered ticket inbox with HTMX v2 zero-reload status, priority, and assignee badge swaps.
+- 📅 **Schedule Calendar (`/calendar`)**: Schedule and track server maintenance windows, support shifts, and SLA deadline targets.
+- 📝 **Shift Notes & Scratchpad (`/notes`)**: Sticky notes for support agents & admins to store quick reference IP addresses, credential snippets, and shift handoff checklists with pin/unpin controls.
+- ✉️ **Ticket Queue (`/tickets`)**: Server-rendered ticket inbox with HTMX v2 zero-reload status, priority, and assignee badge swaps.
 - 🛡️ **Double-Barrier RBAC Security**: Role permissions enforced at both HTTP middleware (`RequireRole`) and PostgreSQL repository query filters.
-- 📊 **Outlook Today Analytics (`/dashboard`)**: Real-time aggregate metrics for open tickets, in-progress issues, SLA resolution averages, and agent workload.
-- 📧 **Outlook HTML Email Notifications**: In-process goroutine worker sending Microsoft Outlook-styled HTML emails via SMTP (MailHog).
+- 📊 **Dashboard Analytics (`/dashboard`)**: Real-time aggregate metrics for open tickets, in-progress issues, SLA resolution averages, and agent workload.
+- 📧 **ticMail HTML Email Notifications**: In-process goroutine worker sending HTML emails via SMTP.
 
 ---
 
@@ -42,7 +42,7 @@
 
 ```mermaid
 graph TD
-    Client["💻 Web Browser<br/>(Microsoft Outlook 365 Layout + HTMX v2)"]
+    Client["💻 Web Browser<br/>(ticDesk Workstation + HTMX v2)"]
     
     subgraph GoServer["🚀 Go Backend Server (net/http + chi)"]
         Router["Chi Router & RBAC Middleware"]
@@ -52,14 +52,14 @@ graph TD
     end
     
     Database[("🐘 PostgreSQL 16<br/>(Tickets, Events, Notes, Users)")]
-    MailHog["✉️ MailHog SMTP Server<br/>(Dev Email Testing)"]
+    ticMail["✉️ ticMail SMTP Engine<br/>(Built-in Email System)"]
 
     Client <-->|"HTTP / HTML Partial Swaps"| Router
     Router --> Handlers
     Handlers <-->|"pgx Pool Queries"| Database
     Handlers --> StorageService
     Handlers --> EmailWorker
-    EmailWorker -->|"SMTP (Port 1025)"| MailHog
+    EmailWorker -->|"SMTP (Port 1025)"| ticMail
 ```
 
 ---
@@ -69,7 +69,7 @@ graph TD
 | Action | 👑 Admin | 🛠️ Support | 👤 Customer |
 |:---|:---:|:---:|:---:|
 | **Create & View Support Tickets** | ✅ | ✅ | ✅ |
-| **Manage Outlook Calendar Schedule** | ✅ | ✅ | ❌ |
+| **Manage Calendar Schedule** | ✅ | ✅ | ❌ |
 | **Manage Shift Notes & Scratchpad** | ✅ | ✅ | ❌ |
 | **Inline Status & Priority Swaps** | ✅ | ✅ | ❌ |
 | **Assign / Reassign Agents** | ✅ | ✅ | ❌ |
@@ -94,10 +94,10 @@ graph TD
 | Method | Route | Description | Target Page |
 |:---:|:---|:---|:---:|
 | `GET` | `/dashboard` | Today Overview & Workstation | `dashboard.html` |
-| `GET` | `/tickets` | Outlook Mail Ticket Inbox | `ticket_list.html` |
-| `GET` | `/calendar` | Outlook Schedule & Calendar | `calendar.html` |
+| `GET` | `/tickets` | Support Ticket Queue | `ticket_list.html` |
+| `GET` | `/calendar` | Schedule & Calendar | `calendar.html` |
 | `POST` | `/calendar/events` | Create Maintenance / Shift Event | `calendar.html` |
-| `GET` | `/notes` | Outlook Shift Notes Scratchpad | `notes.html` |
+| `GET` | `/notes` | Shift Notes Scratchpad | `notes.html` |
 | `POST` | `/notes` | Create Sticky Note | `notes.html` |
 | `POST` | `/notes/{id}/pin` | Pin/Unpin Sticky Note | `notes.html` |
 | `GET` | `/admin/users` | User & Role Management | `admin_users.html` |
@@ -106,6 +106,6 @@ graph TD
 
 <div align="center">
 
-  <sub>Built with ❤️ by Suvesh • Microsoft Outlook 365 Workstation Engine</sub>
+  <sub>Built with ❤️ by Suvesh • ticDesk Support Workstation Engine</sub>
 
 </div>

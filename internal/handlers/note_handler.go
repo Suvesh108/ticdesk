@@ -4,6 +4,7 @@ import (
 	"html/template"
 	"net/http"
 	"ticDesk/internal/auth"
+	"ticDesk/internal/models"
 	"ticDesk/internal/repository"
 )
 
@@ -32,9 +33,18 @@ func (h *NoteHandler) RenderNotes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Build a separate slice of pinned notes for the template's pinned section
+	var pinnedNotes []models.UserNote
+	for _, n := range notes {
+		if n.IsPinned {
+			pinnedNotes = append(pinnedNotes, n)
+		}
+	}
+
 	data := map[string]interface{}{
-		"User":  user,
-		"Notes": notes,
+		"User":        user,
+		"Notes":       notes,
+		"PinnedNotes": pinnedNotes,
 	}
 	h.tmpl.ExecuteTemplate(w, "notes.html", data)
 }
